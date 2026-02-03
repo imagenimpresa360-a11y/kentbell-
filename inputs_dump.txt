@@ -1,0 +1,2 @@
+Input 0: Visible=True, HTML=<input data-v-8461d950="" class="fa11 preIcono" data-bmid="input-email-ingreso" enfocar="enfocarAlAparecer" autocomplete="username" id="8461d950-1-input-email" tabindex="0" type="email" placeholder="Correo">
+Input 1: Visible=True, HTML=<input data-v-8461d950="" class="fa11 preIcono postIcono" data-bmid="input-password-ingreso" autocorrect="off" autocapitalize="none" autocomplete="current-password" id="8461d950-1-input-rrwCJKNW1n" tabindex="0" type="password" enfocar="enfocarAlAparecer" placeholder="Contraseña">
