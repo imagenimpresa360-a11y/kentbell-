@@ -87,10 +87,11 @@ login_boxmagic_v*.py
 login_final_attempt.py
 
 # ===== Scripts de análisis ad-hoc =====
-analyze_dashboard.py
-analyze_discrepancy.py
-analyze_html.py
-analyze_report_html.py
+analyze_*.py
+compare_offers.py
+download_vpos_transactions.py
+extract_inactive_users.py
+investigate_csv_download.py
 
 # ===== Scripts de generación de reportes puntuales =====
 generate_ranking_2025.py
