@@ -29,13 +29,45 @@ CREATE TABLE IF NOT EXISTS raw_virtualpos (
     id SERIAL PRIMARY KEY,
     import_batch_id UUID,
     raw_data JSONB,
-    vpos_code VARCHAR(100),
-    amount NUMERIC(12, 2),
+
+    -- Identificación
+    transaction_id  VARCHAR(50) UNIQUE,      -- id interno VPOS
+    vpos_code       VARCHAR(100),            -- codigo_de_autorizacion
+
+    -- Montos
+    amount          NUMERIC(12, 2),          -- monto bruto
+    tax             NUMERIC(12, 2) DEFAULT 0,-- impuesto
+    total           NUMERIC(12, 2),          -- total
+    commission      NUMERIC(12, 2) DEFAULT 0,-- comision VPOS
+    net_amount      NUMERIC(12, 2),          -- total_abono (lo que entra al banco)
+
+    -- Estado y medio de pago 
+    status          VARCHAR(30),             -- pagado / pendiente
+    payment_method  VARCHAR(50),             -- Tarjeta de Crédito, etc.
+    payment_type    VARCHAR(10),             -- VN, VC, etc.
+    installments    SMALLINT DEFAULT 0,
+
+    -- Cliente
+    client_name     VARCHAR(150),
+    client_rut      VARCHAR(20),
+    email           VARCHAR(150),
+    phone           VARCHAR(30),
+
+    -- Producto
+    plan_description TEXT,                   -- campo 'producto'
+
+    -- Fechas
     transaction_date TIMESTAMP,
-    card_type VARCHAR(20),
-    source_hint VARCHAR(50),
-    created_at TIMESTAMP DEFAULT NOW()
+    authorization_date TIMESTAMP,
+    deposit_date    DATE,                    -- fecha_abono
+
+    source_hint     VARCHAR(50),
+    created_at      TIMESTAMP DEFAULT NOW()
 );
+
+-- Índice para evitar duplicados en reimportaciones
+CREATE INDEX IF NOT EXISTS idx_raw_virtualpos_transaction_id ON raw_virtualpos(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_raw_virtualpos_date ON raw_virtualpos(transaction_date);
 
 CREATE TABLE IF NOT EXISTS raw_lioren_sales (
     id SERIAL PRIMARY KEY,

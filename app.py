@@ -17,6 +17,19 @@ from process_bm_csv import process_bm_dataframe, parse_bm_csv_content
 from process_vpos_csv import process_vpos_content
 from process_active_students import process_active_students_content
 
+# --- CONSTANTES DE NEGOCIO ---
+NUEVOS_PRECIOS = {1:7_000, 4:27_000, 8:39_900, 10:42_900, 12:45_900, 16:51_900, 20:55_900, 24:59_900}
+PRECIO_A_CLASES = {7_000:1, 27_000:4, 37_900:8, 39_900:10, 42_900:12, 49_900:16, 52_900:20, 59_900:24}
+
+def get_delta_unit(precio):
+    try:
+        p_int = int(float(precio))
+        n = PRECIO_A_CLASES.get(p_int)
+        if n is None: return 0
+        return NUEVOS_PRECIOS.get(n, p_int) - p_int
+    except:
+        return 0
+
 # Configuración de página
 st.set_page_config(
     page_title="Kent Bell | Strategic Hub", 
@@ -116,19 +129,29 @@ st.markdown("""
     div[data-testid="metric-container"] {
         background-color: #ffffff; 
         border: 1px solid #e2e8f0; 
-        padding: 20px; 
-        border-radius: 16px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
+        padding: 24px; 
+        border-radius: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-left: 5px solid #3b82f6;
     }
     div[data-testid="metric-container"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border-left: 5px solid #2563eb;
     }
     div[data-testid="stMetricValue"] {
-        font-size: 1.8rem !important;
+        font-size: 2.2rem !important;
         font-weight: 800 !important;
         color: #0f172a !important;
+        letter-spacing: -0.025em;
+    }
+    div[data-testid="stMetricLabel"] {
+        font-size: 0.9rem !important;
+        color: #64748b !important;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.05em;
     }
     
     /* Tabs Styling */
@@ -247,10 +270,18 @@ with h_col1:
                 <h2 style="margin:0; font-weight: 800; color: #0f172a; font-size: 1.4rem;">{page}</h2>
             </div>
             <div style="color: #64748b; font-weight: 600;">
-                Fiscal {sel_year} | <span style="color: #3b82f6;">v3.5.0 EXECUTIVE</span>
+                Fiscal {sel_year} | <span style="color: #3b82f6;">v3.6.0 EXECUTIVE</span>
             </div>
         </div>
     """, unsafe_allow_html=True)
+
+    # Mostrar alerta si los datos están muy desactualizados
+    with engine.connect() as conn:
+        last_sync = pd.read_sql(text("SELECT value FROM system_settings WHERE key = 'last_sync_boxmagic'"), conn)
+        if not last_sync.empty:
+            sync_dt = datetime.strptime(last_sync.iloc[0]['value'], "%Y-%m-%d %H:%M")
+            if (datetime.now() - sync_dt).days > 1:
+                st.warning(f"⚠️ Los datos de ventas no se han actualizado desde hace {(datetime.now() - sync_dt).days} días. Ve a 'Sync & Carga' para actualizar.")
 with h_col2:
     try:
         st.image("logo_the_boos.jpg", width=120)
@@ -262,81 +293,213 @@ with h_col2:
 # 1. DASHBOARD
 # 1. DASHBOARD GENERAL (P&L)
 # 1. DASHBOARD GENERAL (P&L)
+# 1. DASHBOARD GENERAL (P&L)
 if page == "📊 Dashboard General (P&L)":
-    # st.info("ℹ️ Vista Ejecutiva simplificada para toma de decisiones rápida.")
+    # --- FILTROS DE CABECERA (ZONA EJECUTIVA) ---
+    col_f1, col_f2 = st.columns([2, 5])
+    with col_f1:
+        sede_filter = st.radio("🏢 Sede de Control", ["Holding (Todas)", "Marina", "Campanario"], horizontal=True)
     
-    # --- DATA FETCHING ---
+    # --- DATA FETCHING (CON FILTRO DE SEDE) ---
     try:
-        # A. VENTAS BOXMAGIC
-        # Filtramos por año actual
-        q_bm = f"""
-            SELECT COALESCE(source_hint, 'General') as sede, SUM(amount) as total, COUNT(*) as qt
-            FROM raw_boxmagic 
-            WHERE EXTRACT(YEAR FROM created_at) = {sel_year} 
-              AND payment_status IN ('activo', 'congelado')
-            GROUP BY 1
+        where_sede_raw = ""
+        where_sede_ledger = ""
+        if sede_filter == "Marina":
+            where_sede_raw = "AND source_hint = 'Marina'"
+            where_sede_ledger = "AND sede = 'Marina'"
+        elif sede_filter == "Campanario":
+            where_sede_raw = "AND source_hint = 'Campanario'"
+            where_sede_ledger = "AND sede = 'Campanario'"
+
+        # A. VENTAS & COMISIONES (Consolidado)
+        q_inc = f"""
+            SELECT 
+                COALESCE(SUM(amount_expected), 0) as bruto,
+                COALESCE(SUM(commission_amount), 0) as comisiones,
+                COUNT(*) as qt
+            FROM consolidated_incomes
+            WHERE EXTRACT(YEAR FROM transaction_date) = {sel_year}
+              {where_sede_ledger}
         """
         with engine.connect() as conn:
-            df_bm = pd.read_sql(text(q_bm), conn)
+            df_inc_data = pd.read_sql(text(q_inc), conn).iloc[0]
         
-        val_bm_marina = df_bm[df_bm['sede'] == 'Marina']['total'].sum()
-        qt_bm_marina = df_bm[df_bm['sede'] == 'Marina']['qt'].sum()
-        
-        val_bm_campanario = df_bm[df_bm['sede'] == 'Campanario']['total'].sum()
-        qt_bm_campanario = df_bm[df_bm['sede'] == 'Campanario']['qt'].sum()
-        
-        val_bm_total = df_bm['total'].sum()
-        qt_bm_total = df_bm['qt'].sum()
+        val_bruto = float(df_inc_data['bruto'])
+        val_comisiones = float(df_inc_data['comisiones'])
+        val_neto_comercial = val_bruto - val_comisiones
+        qt_bm_total = int(df_inc_data['qt'])
         
         # B. COSTOS OPERATIVOS (Net_Amount from expense_ledger)
         q_exp = f"""
-            SELECT COALESCE(sede, 'General') as sede, SUM(net_amount) as total
+            SELECT COALESCE(SUM(net_amount), 0) as total
             FROM expense_ledger
             WHERE EXTRACT(YEAR FROM due_date) = {sel_year}
-            GROUP BY 1
+              {where_sede_ledger}
         """
-        df_exp = pd.read_sql(q_exp, engine)
-        
-        cost_marina = df_exp[df_exp['sede'] == 'Marina']['total'].sum()
-        cost_campanario = df_exp[df_exp['sede'] == 'Campanario']['total'].sum()
-        cost_general = df_exp[df_exp['sede'] == 'General']['total'].sum() # Gastos centrales
-        cost_total = df_exp['total'].sum()
-        
-        # C. MARGENES
-        margen_marina = val_bm_marina - cost_marina
-        margen_campanario = val_bm_campanario - cost_campanario
-        
-        # Consolidado: Ventas Totales (BM) vs Costos Totales (Incluye General)
-        # Nota: Si hay otros ingresos (VPOS, Banco directo no conciliado), se podrían sumar aquí.
-        # Por ahora obedecemos "indicador consolidado de ventas, costos y margen".
-        # Si agregamos VPOS, el número será mayor que la suma de las dos sedes si VPOS no tiene sede.
-        
-        margen_total = val_bm_total - cost_total
+        with engine.connect() as conn:
+            cost_total = float(pd.read_sql(text(q_exp), conn).iloc[0]['total'])
+            
+        ebitda = val_neto_comercial - cost_total
 
-        # --- UI LAYOUT (3 FILAS) ---
+        # --- UI LAYOUT: KPIs PRINCIPALES (REFINADOS) ---
+        st.markdown(f"### 🎯 Resumen Ejecutivo: {sede_filter}")
+        k1, k2, k3, k4 = st.columns(4)
         
-        st.markdown("### ⚓ Sede MARINA")
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Ventas BoxMagic", f"${val_bm_marina:,.0f}")
-        m2.metric("Costos Operativos", f"${cost_marina:,.0f}")
-        m3.metric("N° Reg. Ventas", f"{int(qt_bm_marina)}")
-        m4.metric("Margen Operacional", f"${margen_marina:,.0f}", delta_color="normal" if margen_marina > 0 else "inverse")
+        k1.metric("Ingreso Bruto", f"${val_bruto:,.0f}", 
+                  delta=f"-${val_comisiones:,.0f} Comis.", delta_color="inverse")
+        k2.metric("Margen Comercial", f"${val_neto_comercial:,.0f}", 
+                  help="Ingreso Bruto menos comisiones de VPOS/Bot")
+        k3.metric("Costos Operativos", f"${cost_total:,.0f}", 
+                  delta=f"{(cost_total/val_neto_comercial*100 if val_neto_comercial > 0 else 0):.1f}% s/Ventas", delta_color="inverse")
+        k4.metric("EBITDA Estimado", f"${ebitda:,.0f}", 
+                  delta=f"{(ebitda/val_neto_comercial*100 if val_neto_comercial > 0 else 0):.1f}% Margen",
+                  delta_color="normal" if ebitda > 0 else "inverse")
+
+        # --- SEGUNDA FILA: ANALÍTICA VISUAL CENTRALIZADA ---
         st.markdown("---")
+        st.markdown(f"### 📈 Análisis de Tendencias: {sede_filter}")
+        
+        tab_cf, tab_exp, tab_trend, tab_proy = st.tabs(["💰 Flujo de Caja", "📋 Gastos por Cuenta", "📊 Salud Financiera", "🚀 Proyecciones Alza 2026"])
+        
+        with tab_cf:
+            # Query mensual con filtros
+            q_in_m = f"""
+                SELECT EXTRACT(MONTH FROM created_at) as mes, SUM(amount) as monto, 'Ingresos' as tipo
+                FROM raw_boxmagic
+                WHERE EXTRACT(YEAR FROM created_at) = {sel_year} AND payment_status IN ('activo', 'congelado')
+                {where_sede_raw}
+                GROUP BY  mes
+            """
+            q_out_m = f"""
+                SELECT EXTRACT(MONTH FROM due_date) as mes, SUM(net_amount) as monto, 'Gastos' as tipo
+                FROM expense_ledger
+                WHERE EXTRACT(YEAR FROM due_date) = {sel_year}
+                {where_sede_ledger}
+                GROUP BY mes
+            """
+            with engine.connect() as conn:
+                df_in_m = pd.read_sql(text(q_in_m), conn)
+                df_out_m = pd.read_sql(text(q_out_m), conn)
+            
+            df_cf = pd.concat([df_in_m, df_out_m])
+            if not df_cf.empty:
+                df_cf['mes'] = df_cf['mes'].astype(int)
+                meses = {1:'Ene', 2:'Feb', 3:'Mar', 4:'Abr', 5:'May', 6:'Jun', 7:'Jul', 8:'Ago', 9:'Sep', 10:'Oct', 11:'Nov', 12:'Dic'}
+                df_cf['mes'] = df_cf['mes'].map(meses)
+                
+                fig_cf = px.bar(df_cf, x='mes', y='monto', color='tipo', barmode='group',
+                               color_discrete_map={'Ingresos': '#10b981', 'Gastos': '#ef4444'},
+                               category_orders={"mes": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]})
+                st.plotly_chart(fig_cf, use_container_width=True)
+            else:
+                st.info("Sin datos para el flujo de caja mensual.")
 
-        st.markdown("### ⛪ Sede CAMPANARIO")
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Ventas BoxMagic", f"${val_bm_campanario:,.0f}")
-        c2.metric("Costos Operativos", f"${cost_campanario:,.0f}")
-        c3.metric("N° Reg. Ventas", f"{int(qt_bm_campanario)}")
-        c4.metric("Margen Operacional", f"${margen_campanario:,.0f}", delta_color="normal" if margen_campanario > 0 else "inverse")
-        st.markdown("---")
+        with tab_exp:
+            st.markdown("#### P&L: Distribución de Costos Operativos")
+            q_pnl = f"""
+                SELECT c.name as categoria, SUM(l.net_amount) as total
+                FROM expense_ledger l
+                JOIN expense_categories c ON l.category_id = c.id
+                WHERE EXTRACT(YEAR FROM l.due_date) = {sel_year}
+                {where_sede_ledger}
+                GROUP BY 1 ORDER BY 2 DESC
+            """
+            with engine.connect() as conn:
+                df_pnl = pd.read_sql(text(q_pnl), conn)
+            
+            if not df_pnl.empty:
+                lc, rc = st.columns([1, 1])
+                with lc:
+                    fig_dist = px.pie(df_pnl, values='total', names='categoria', hole=0.5, color_discrete_sequence=px.colors.qualitative.Pastel)
+                    st.plotly_chart(fig_dist, use_container_width=True)
+                with rc:
+                    st.dataframe(df_pnl.style.format({"total": "${:,.0f}"}), use_container_width=True)
+            else:
+                st.info("No se registran egresos para esta selección.")
 
-        st.markdown("### 🌎 CONSOLIDADO HOLDING")
-        h1, h2, h3, h4 = st.columns(4)
-        h1.metric("Ventas Totales (Holding)", f"${val_bm_total:,.0f}")
-        h2.metric("Costos Totales (Inc. Centrales)", f"${cost_total:,.0f}")
-        h3.metric("Total Reg. Ventas", f"{int(qt_bm_total)}")
-        h4.metric("EBITDA / Margen Final", f"${margen_total:,.0f}", delta_color="normal" if margen_total > 0 else "inverse")
+        with tab_trend:
+            st.markdown("#### Margen Operacional Mensual")
+            if not df_in_m.empty and not df_out_m.empty:
+                trend = pd.merge(df_in_m, df_out_m, on='mes', how='outer', suffixes=('_in', '_out')).fillna(0)
+                trend['margen'] = trend['monto_in'] - trend['monto_out']
+                trend['mes'] = trend['mes'].astype(int)
+                trend = trend.sort_values('mes')
+                meses_t = {1:'Ene', 2:'Feb', 3:'Mar', 4:'Abr', 5:'May', 6:'Jun', 7:'Jul', 8:'Ago', 9:'Sep', 10:'Oct', 11:'Nov', 12:'Dic'}
+                trend['mes'] = trend['mes'].map(meses_t)
+                
+                fig_trend = px.line(trend, x='mes', y='margen', markers=True, 
+                                   labels={'mes': 'Mes', 'margen': 'Resultado ($)'})
+                fig_trend.update_traces(line_color='#3b82f6')
+                fig_trend.add_bar(x=trend['mes'], y=trend['margen'], name='Margen', 
+                                 marker_color=['#10b981' if v > 0 else '#ef4444' for v in trend['margen']])
+                st.plotly_chart(fig_trend, use_container_width=True)
+            else:
+                st.info("Cargue ingresos y egresos para ver la salud financiera.")
+
+        with tab_proy:
+            st.markdown("#### 🚀 Impacto Estimado: Alza de Precios Abril 2026")
+            st.info("Este análisis proyecta el impacto del nuevo tarifario que entra en vigencia en Abril 2026, comparándolo con la base actual.")
+            
+            # Replicar lógica de proyeccion_consolidada.py
+            q_proy = f"""
+                SELECT COALESCE(source_hint, 'General') as sede, amount, 
+                       EXTRACT(MONTH FROM created_at)::int as mes
+                FROM raw_boxmagic
+                WHERE EXTRACT(YEAR FROM created_at) = {sel_year}
+                  AND payment_status IN ('activo', 'congelado', 'Activo', 'Congelado')
+                  {where_sede_raw}
+            """
+            with engine.connect() as conn:
+                df_p = pd.read_sql(text(q_proy), conn)
+            
+            if not df_p.empty:
+                df_p['amount'] = pd.to_numeric(df_p['amount'], errors='coerce').fillna(0)
+                df_p['delta'] = df_p['amount'].apply(get_delta_unit)
+                df_p['monto_nuevo'] = df_p['amount'] + df_p['delta']
+                
+                # Base: Promedio Ene-Feb (meses con datos)
+                base_proy = df_p.groupby('mes').agg(
+                    ingreso_actual=('amount','sum'),
+                    ingreso_nuevo=('monto_nuevo','sum'),
+                    delta=('delta', 'sum')
+                ).reset_index()
+                
+                prom_mensual = base_proy.mean()
+                
+                # Proyección 9 meses (Abr-Dic)
+                delta_9m = prom_mensual['delta'] * 9
+                total_anual_adicional = delta_9m
+                
+                pc1, pc2, pc3 = st.columns(3)
+                pc1.metric("Delta Mensual Promedio", f"+${prom_mensual['delta']:,.0f}")
+                pc2.metric("Impacto Abril-Diciembre", f"+${delta_9m:,.0f}", help="Suma de los 9 meses con alza")
+                pc3.metric("% Incremento Estimado", f"{((prom_mensual['ingreso_nuevo']/prom_mensual['ingreso_actual']-1)*100) if prom_mensual['ingreso_actual'] > 0 else 0:.1f}%")
+                
+                # Gráfico de proyección anual
+                meses_proy = []
+                for m in range(1, 13):
+                    tipo = 'Real' if m in base_proy['mes'].values else 'Proyectado'
+                    alza = m >= 4
+                    m_label = {1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'}[m]
+                    
+                    ing_act = base_proy[base_proy['mes']==m]['ingreso_actual'].values[0] if m in base_proy['mes'].values else prom_mensual['ingreso_actual']
+                    ing_new = (base_proy[base_proy['mes']==m]['ingreso_nuevo'].values[0] if m in base_proy['mes'].values else prom_mensual['ingreso_nuevo']) if alza else ing_act
+                    
+                    meses_proy.append({'Mes': m_label, 'Ingreso': ing_new, 'Estado': f"{tipo} {'(Con Alza)' if alza else '(Base)'}"})
+                
+                df_viz_proy = pd.DataFrame(meses_proy)
+                fig_proy = px.bar(df_viz_proy, x='Mes', y='Ingreso', color='Estado',
+                                 title="Proyección de Ingresos 2026 (Consolidado)",
+                                 color_discrete_map={'Real (Base)': '#64748b', 'Proyectado (Base)': '#94a3b8', 'Proyectado (Con Alza)': '#3b82f6'})
+                st.plotly_chart(fig_proy, use_container_width=True)
+                
+                with st.expander("📝 Detalles del Nuevo Tarifario"):
+                    st.write("**Precios por número de clases:**")
+                    tarifas_df = pd.DataFrame([{"Clases": k, "Precio Nuevo": f"${v:,.0f}"} for k, v in NUEVOS_PRECIOS.items()])
+                    st.table(tarifas_df)
+            else:
+                st.warning("Cargue datos de BoxMagic para generar proyecciones.")
+
 
     except Exception as e:
         st.error(f"Error cargando dashboard ejecutivo: {e}")
@@ -400,23 +563,58 @@ elif page == "📈 Dashboard BoxMagic":
 
 # 1.3 DASHBOARD VIRTUALPOS (Banking Flow)
 elif page == "💳 Dashboard VirtualPOS":
-    st.info("🏦 **Cash Flow Audit**: Este tablero cuantifica depósitos y transferencias procesadas vía VirtualPOS.")
+    st.info("🏦 **VirtualPOS / Transbank**: Este tablero analiza los pagos con tarjetas, comisiones retenidas y abonos netos generados.")
     try:
-        query_v = f"SELECT transaction_date as fecha, amount as monto, vpos_code FROM raw_virtualpos WHERE EXTRACT(YEAR FROM transaction_date) = {sel_year}"
+        query_v = f"""
+            SELECT 
+                transaction_date as fecha, 
+                amount as monto_bruto, 
+                commission as comision, 
+                net_amount as monto_neto, 
+                client_name as cliente, 
+                plan_description as plan, 
+                status as estado, 
+                payment_method as medio_pago 
+            FROM raw_virtualpos 
+            WHERE EXTRACT(YEAR FROM transaction_date) = {sel_year}
+            ORDER BY transaction_date DESC
+        """
         df_v = pd.read_sql(query_v, engine)
         if df_v.empty:
             st.warning("No hay flujos de VirtualPOS detectados para este año.")
         else:
-            v1, v2 = st.columns(2)
-            v1.metric("Total Transaccionado", f"${df_v['monto'].sum():,.0f}")
-            v2.metric("Volumen de Operaciones", len(df_v))
+            v1, v2, v3, v4 = st.columns(4)
+            total_bruto = df_v['monto_bruto'].sum()
+            total_comision = df_v['comision'].sum()
+            total_neto = df_v['monto_neto'].sum()
+            
+            v1.metric("Ventas Brutas", f"${total_bruto:,.0f}")
+            v2.metric("Comisiones VPOS", f"${total_comision:,.0f}", delta=f"{(total_comision/total_bruto)*100 if total_bruto else 0:.1f}%", delta_color="inverse")
+            v3.metric("Abonos Netos", f"${total_neto:,.0f}")
+            v4.metric("N° Transacciones", len(df_v))
             
             st.markdown("---")
-            df_v['fecha'] = pd.to_datetime(df_v['fecha'])
-            df_line = df_v.groupby('fecha')['monto'].sum().reset_index()
-            fig_v = px.line(df_line, x='fecha', y='monto', title="Flujo de Abonos por Fecha", markers=True)
-            st.plotly_chart(fig_v, use_container_width=True)
-            st.dataframe(df_v, use_container_width=True)
+            g1, g2 = st.columns([2, 1])
+            with g1:
+                df_v['fecha_corta'] = pd.to_datetime(df_v['fecha']).dt.date
+                df_line = df_v.groupby('fecha_corta')['monto_neto'].sum().reset_index()
+                fig_v = px.line(df_line, x='fecha_corta', y='monto_neto', title="Abonos Netos Diarios ($)", markers=True)
+                fig_v.update_traces(line_color='#10b981')
+                st.plotly_chart(fig_v, use_container_width=True)
+            with g2:
+                 df_status = df_v['estado'].value_counts().reset_index()
+                 df_status.columns = ['estado', 'cantidad']
+                 fig_pie = px.pie(df_status, values='cantidad', names='estado', title="Estado de Transacciones", hole=0.4)
+                 st.plotly_chart(fig_pie, use_container_width=True)
+
+            st.markdown("#### Detalle de Transacciones (Últimas)")
+            # Formatear el dataframe para mostrar
+            df_display = df_v.drop(columns=['fecha_corta']).copy()
+            df_display['monto_bruto'] = df_display['monto_bruto'].apply(lambda x: f"${x:,.0f}")
+            df_display['comision'] = df_display['comision'].apply(lambda x: f"${x:,.0f}")
+            df_display['monto_neto'] = df_display['monto_neto'].apply(lambda x: f"${x:,.0f}")
+            df_display['fecha'] = pd.to_datetime(df_display['fecha']).dt.strftime('%d/%m/%Y %H:%M')
+            st.dataframe(df_display, use_container_width=True)
     except Exception as e: st.error(f"Error VPOS: {e}")
 
 # 1.4 DASHBOARD LIOREN (Tax/Billing)

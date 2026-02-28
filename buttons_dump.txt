@@ -1,5 +1,0 @@
-Button 0: Visible=True, Text='', HTML=<button tabindex="-1" data-bmid="link-contrasena-olvidada" type="button" aria-label="Boton"></button>
-Button 1: Visible=True, Text='', HTML=<button tabindex="-1" data-bmid="toggle-password-visibility-login" activo="false" type="button" aria-label="Boton"></button>
-Button 2: Visible=True, Text='', HTML=<button data-bmid="btn-ingresar" icon="login" type="submit" aria-label="Boton"></button>
-Button 3: Visible=True, Text='', HTML=<button type="button" aria-label="Boton"></button>
-Button 4: Visible=True, Text='', HTML=<button data-bmid="btn-idioma-texto" type="button" aria-label="Boton"></button>

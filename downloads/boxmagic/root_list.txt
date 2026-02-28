@@ -1,7 +1,0 @@
-
-    Directory: C:\Users\DELL\Desktop\Agente kent-bell\downloads\boxmagic
-
-Mode                 LastWriteTime         Length Name
-----                 -------------         ------ ----
--a---          29-01-2026    23:55              0 root_list.txt
-

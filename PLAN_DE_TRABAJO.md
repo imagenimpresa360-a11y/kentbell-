@@ -38,32 +38,12 @@
 
 ## 🔄 EN PROGRESO
 
-### 5. Conector VirtualPOS - Descarga de Reportes
-**Prioridad:** ALTA  
-**Estado:** En Progreso (75%)  
-**Estimación:** 1-2 horas adicionales
+### 5. Conector VirtualPOS - Descarga de Reportes / MercadoPago
+**Prioridad:** SUSPENDIDA / REEMPLAZADA  
+**Estado:** Pausado (Se migrará a MercadoPago futuro)  
+**Estimación:** N/A
 
-**Tareas:**
-- [x] Analizar estructura del dashboard de VirtualPOS
-- [x] Identificar sección de reportes/exportación
-- [x] Implementar navegación automática al dashboard
-- [ ] Resolver navegación al menú de Transacciones (timeout en clic)
-- [ ] Localizar botón de descarga/exportación en página de transacciones
-- [ ] Implementar descarga de archivo (CSV/Excel)
-- [ ] Validar estructura de datos descargados
-- [ ] Crear script de producción `virtualpos_downloader.py` (creado, requiere ajustes)
-- [ ] Pruebas de descarga exitosa
-
-**Hallazgos:**
-- Dashboard accesible con datos de ventas ($3.954.300) y abonos ($4.478.966)
-- Menú lateral con opciones: Dashboard, Transacciones, Herramientas de cobro, PAT Digital, CRM, Catálogo, Reportes
-- Botón "Descargar" encontrado en sección QR (descarga QR, no reportes)
-- Navegación a "Transacciones" requiere interacción con menú lateral (en proceso)
-
-**Bloqueador Actual:**
-- Timeout al hacer clic en enlace de Transacciones (elemento puede estar oculto o requerir hover)
-
-**Entregable:** Script funcional que descarga reportes de transacciones de VirtualPOS
+**Nota:** El usuario indicó el 25-02-2026 que el uso de VirtualPOS queda descartado en favor de **Mercado Libre (MercadoPago)**. Este punto queda pendiente para después.
 
 ---
 
@@ -108,25 +88,25 @@
 
 ---
 
-### 8. Dashboard de Visualización
-**Prioridad:** MEDIA  
-**Estado:** No iniciado  
-**Estimación:** 6-8 horas  
-**Dependencias:** Completar integración con BD
+### 8. Dashboard de Visualización Financiero Centralizado
+**Prioridad:** ALTA (FOCO ACTUAL)  
+**Estado:** En Progreso
+**Estimación:** 4-6 horas  
+**Dependencias:** Completar limpieza de BD e ingresos históricos disponibles (BoxMagic).
 
 **Tareas:**
-- [ ] Diseñar mockup de dashboard
+- [ ] Revisar el estado lógico actual (`dashboard.py` / `app.py`).
+- [ ] Diseñar visualización de Flujo de Caja (Ingresos vs Gastos).
 - [ ] Crear consultas SQL para métricas clave:
-  - Ingresos totales por fuente
-  - Tendencia de ventas mensual
-  - Comparativa BoxMagic vs VirtualPOS
-  - Indicadores de crecimiento
-- [ ] Desarrollar interfaz web (Streamlit o similar)
-- [ ] Implementar gráficos interactivos
-- [ ] Agregar filtros por fecha/fuente
-- [ ] Pruebas de usabilidad
+  - Ingresos totales por fuente (BoxMagic vs otros)
+  - Gastos por sede y categoría
+  - Tendencia mensual de rentabilidad
+- [ ] Desarrollar interfaz web (Streamlit o similar).
+- [ ] Implementar gráficos interactivos (Plotly/Altair/Streamlit native).
+- [ ] Agregar filtros por fecha/fuente/sede.
+- [ ] Pruebas de usabilidad.
 
-**Entregable:** Dashboard web funcional accesible localmente
+**Entregable:** Dashboard web financiero completo y actualizado.
 
 ---
 
@@ -208,20 +188,19 @@
 - ✅ Análisis y Diseño: 100%
 - ✅ Configuración: 100%
 - ✅ BoxMagic: 100%
-- ✅ VirtualPOS (Login): 100%
-- ⏳ VirtualPOS (Descarga): 0%
-- ⏳ Integración BD: 0%
+- ⏸️ VirtualPOS: Suspendido (cambio a MercadoPago)
+- ⏳ Integración BD: En proceso
 - ⏳ Automatización: 0%
-- ⏳ Dashboard: 0%
+- ⏳ Dashboard: En Progreso (Foco Actual)
 
 ---
 
 ## 🔧 PRÓXIMOS PASOS INMEDIATOS
 
-1. **HOY:** Completar descarga de reportes de VirtualPOS
-2. **MAÑANA:** Iniciar integración con PostgreSQL
-3. **Esta semana:** Completar pipeline ETL básico
-4. **Próxima semana:** Implementar automatización y dashboard
+1. **HOY:** Trabajar en el Dashboard Estadístico y Financiero Centralizado.
+2. **MAÑANA:** Ajustar pipeline con datos consolidados para KPIs.
+3. **Esta semana:** Finalizar el primer MVC del Dashboard con filtros y reportes de Flujo de Cajas.
+4. **Próxima semana:** Implementar conector paralelo a MercadoPago (Mercado Libre) si se da el inicio.
 
 ---
 
