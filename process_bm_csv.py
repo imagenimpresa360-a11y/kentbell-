@@ -61,7 +61,15 @@ def process_bm_dataframe(df, sede_hint="General"):
         cur = conn.cursor()
         
         # Normalize DataFrame columns to lowercase for mapping
-        df.columns = [c.lower() for c in df.columns]
+        df.columns = [str(c).lower().strip() for c in df.columns]
+        
+        # Expert check: Is this a summary file?
+        required_cols_found = any('cliente' in c or 'alumno' in c for c in df.columns) and \
+                              any('monto' in c or 'valor' in c or 'precio' in c for c in df.columns)
+        
+        if not required_cols_found:
+            print(f"      ⏩ Skipping: File doesn't appear to be a transactional report (Cols: {list(df.columns)})")
+            return 0, 0
         
         # Map roughly
         col_map = {
@@ -135,13 +143,14 @@ def process_bm_dataframe(df, sede_hint="General"):
                 
                 date_str = str(row.get('date', '')).strip()
                 created_at = None
-                for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d"):
+                # Expert: Extra formats for better coverage
+                for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d", "%d/%m/%y", "%d-%m-%y"):
                     try:
                         created_at = datetime.strptime(date_str, fmt)
                         break
                     except ValueError:
                         continue
-                if not created_at:
+                if not created_at or created_at.year < 2000:
                     print(f"      ⚠ Fecha no reconocida: {date_str}")
                     # If date invalid, we can't check period, so we might insert or fail.
                     # Default to fail? Or let DB handle it. Database 'created_at' is timestamp.

@@ -214,6 +214,31 @@ def process_vpos_csv(csv_path: str) -> tuple[int, int]:
 
 
 # ──────────────────────────────────────────────
+# Wrapper for Streamlit UI (content string → DB)
+# ──────────────────────────────────────────────
+
+def process_vpos_content(content: str) -> tuple:
+    """
+    Procesa el contenido de un CSV de VirtualPOS como string (desde st.file_uploader).
+    Guarda a un archivo temporal y llama al ETL principal.
+    Retorna (insertados, duplicados).
+    """
+    import tempfile
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv',
+                                        encoding='utf-8-sig', delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+
+        ins, skp = process_vpos_csv(tmp_path)
+        os.remove(tmp_path)
+        return ins, skp
+    except Exception as e:
+        print(f"❌ Error en process_vpos_content: {e}")
+        return 0, 0
+
+
+# ──────────────────────────────────────────────
 # Entry point
 # ──────────────────────────────────────────────
 

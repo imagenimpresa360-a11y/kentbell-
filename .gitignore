@@ -60,6 +60,7 @@ promotion_projection.txt
 
 # ===== Logs de ejecución =====
 run_log*.txt
+*.log
 
 # ===== Scripts de un solo uso / exploración =====
 explore_*.py

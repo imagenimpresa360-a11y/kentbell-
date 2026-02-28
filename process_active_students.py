@@ -83,11 +83,30 @@ def process_active_students_content(content, sede="General"):
         print(f"Error processed_active_students: {e}")
         return 0, 0
 
+
+def process_latest_active_file():
+    """Expert utility to find the latest active students CSV in root or downloads/."""
+    try:
+        search_dirs = [os.getcwd(), os.path.join(os.getcwd(), "downloads")]
+        potential_files = []
+        for d in search_dirs:
+            if os.path.exists(d):
+                files = [os.path.join(d, f) for f in os.listdir(d) if 'alumnos activos' in f.lower() and f.endswith('.csv')]
+                potential_files.extend(files)
+        
+        if not potential_files:
+            return 0, "No files found"
+            
+        latest = max(potential_files, key=os.path.getctime)
+        print(f"   🚀 Processing Latest Active Students: {os.path.basename(latest)}")
+        
+        with open(latest, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+            
+        ins, err = process_active_students_content(content)
+        return ins, f"Success: {ins} records"
+    except Exception as e:
+        return 0, str(e)
+
 if __name__ == "__main__":
-    # Test with local file if exists
-    FILE_PATH = r"C:\Users\DELL\Desktop\Agente kent-bell\alumnos activos enero 29012026.csv"
-    if os.path.exists(FILE_PATH):
-        with open(FILE_PATH, 'r', encoding='utf-8', errors='ignore') as f:
-            c = f.read()
-        ins, err = process_active_students_content(c)
-        print(f"Inserted: {ins}")
+    process_latest_active_file()
