@@ -211,56 +211,72 @@ with st.sidebar:
     st.info(f"Viendo como: **{user_role}**")
     st.markdown("---")
     
-    # available_years = [2026, 2025, 2024]
-    # sel_year = st.selectbox("📅 Año Fiscal", available_years, index=0)
-    # Usuario solicitó eliminar selector. Fijamos 2026 por defecto para mantener lógica.
-    sel_year = 2026
+    # --- CONFIGURACIÓN DE PERIODO ---
+    st.markdown("### 📅 Periodo de Análisis")
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        start_date = st.date_input("Inicio", value=datetime(datetime.now().year, 1, 1))
+    with col_p2:
+        end_date = st.date_input("Fin", value=datetime.now())
+    
+    # Mantener sel_year por compatibilidad con otros módulos si es necesario
+    sel_year = start_date.year
     
     # ppm_rate = st.sidebar.number_input("📊 Tasa PPM (%)", value=0.25, step=0.01, help="Tasa P115 1ra Categoría (0.25%)")
     ppm_rate = 0.25
     
     st.markdown("---")
     
-    # Definir menú según rol
-    if user_role == "Luis (Ops)":
-        menu_options = [
-            "💸 Registrar Egresos",
-            "🏃‍♂️ Gestión de Coaches",
-            "📑 Reportes Legales"
-        ]
-    elif user_role == "Finanzas":
-        menu_options = [
-            "📊 Dashboard General (P&L)",
-            "🏦 Dashboard Banco",
-            "📥 Sync & Carga",
-            "📑 Reportes Legales",
-            "🚨 Alertas & Control"
-        ]
-    elif user_role == "Cobranza":
-        menu_options = [
-             "📉 Alumnos Inactivos",
-             "📈 Dashboard BoxMagic",
-             "💳 Dashboard VirtualPOS"
-        ]
-    else: # Admin - Ve todo
-        menu_options = [
+    # --- DEFINICIÓN DE MENÚS POR CATEGORÍA ---
+    menu_groups = {
+        "📊 Dashboards": [
             "📊 Dashboard General (P&L)",
             "📈 Dashboard BoxMagic", 
             "💳 Dashboard VirtualPOS",
             "🧾 Dashboard Lioren",
-            "🏦 Dashboard Banco",
+            "🏦 Dashboard Banco"
+        ],
+        "💸 Egresos": [
             "🏃‍♂️ Gestión de Coaches",
+            "💸 Registrar Egresos",
+            "🏦 Caja & Banco",
+            "🔐 Cierre Fiscal"
+        ],
+        "📥 Reportes y Carga": [
+            "📥 Sync & Carga",
+            "📑 Reportes Legales",
             "📉 Alumnos Inactivos",
             "🚨 Alertas & Control",
-            "💸 Registrar Egresos", 
-            "📥 Sync & Carga",
-            "📑 Reportes Legales"
+            "📂 Históricos Finanzas"
         ]
+    }
 
-    page = st.radio("🏠 MENÚ EXPERTO", menu_options)
+    # Definir permisos por rol (visibilidad de páginas)
+    role_permissions = {
+        "Luis (Ops)": ["💸 Registrar Egresos", "🏃‍♂️ Gestión de Coaches", "📑 Reportes Legales", "📥 Sync & Carga"],
+        "Finanzas": ["📊 Dashboard General (P&L)", "🏦 Dashboard Banco", "📥 Sync & Carga", "📑 Reportes Legales", "🚨 Alertas & Control", "🧾 Dashboard Lioren", "🏦 Caja & Banco", "🔐 Cierre Fiscal", "📂 Históricos Finanzas"],
+        "Cobranza": ["📉 Alumnos Inactivos", "📈 Dashboard BoxMagic", "💳 Dashboard VirtualPOS"],
+        "Admin": [item for sublist in menu_groups.values() for item in sublist]
+    }
+
+    allowed_pages = role_permissions.get(user_role, [])
+    
+    # Filtrar grupos de menú según el rol
+    filtered_groups = {}
+    for group, pages in menu_groups.items():
+        visible_pages = [p for p in pages if p in allowed_pages]
+        if visible_pages:
+            filtered_groups[group] = visible_pages
+
+    # 1. Seleccionar Categoría Principal
+    st.markdown("### 🧭 NAVEGACIÓN")
+    selected_group = st.selectbox("Categoría", list(filtered_groups.keys()))
+    
+    # 2. Seleccionar Página dentro de la categoría
+    page = st.radio("Sección", filtered_groups[selected_group])
     
     st.markdown("---")
-    st.markdown("<div style='text-align: center; font-size: 0.8rem; opacity: 0.6;'>v3.2.1 SENIOR | Enterprise Hub</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; font-size: 0.8rem; opacity: 0.6;'>v3.6.1 SENIOR | Enterprise Hub</div>", unsafe_allow_html=True)
 
 # --- HEADER DINÁMICO ---
 h_col1, h_col2 = st.columns([6, 1])
@@ -301,7 +317,7 @@ if page == "📊 Dashboard General (P&L)":
     sede_filter = st.radio("🏢 Sede de Control", ["Holding (Todas)", "Marina", "Campanario"], horizontal=True)
     
     # Call the new premium dashboard
-    render_financial_dashboard(engine, sel_year, sede_filter)
+    render_financial_dashboard(engine, start_date, end_date, sede_filter)
 
 # 1.2 DASHBOARD BOXMAGIC (Expert Commercial View)
 elif page == "📈 Dashboard BoxMagic":
@@ -982,51 +998,157 @@ elif page == "🏦 Caja & Banco":
         else:
             st.success("✅ No quedan movimientos bancarios por conciliar.")
 
-# 6. REGISTRAR EGRESOS
+# 6. REGISTRAR EGRESOS (MODO SAP FB60)
 elif page == "💸 Registrar Egresos":
-    show_help("Registro Manual de Egresos", """
-        Usa esto para facturas, boletas de servicios o compras con caja chica.
-        - **Sede**: Vital para saber cuánto gasta Marina vs Campanario.
-        - **Gasto Crítico**: Si se activa, aparecerá en el panel de alertas si no se paga a tiempo.
-    """)
-    st.markdown("<h1>💸 Gestión Integral de Egresos</h1>", unsafe_allow_html=True)
+    st.markdown("""
+        <style>
+        .sap-header { background-color: #f1f5f9; padding: 15px; border-radius: 10px; border-left: 5px solid #3b82f6; margin-bottom: 20px; }
+        .sap-section { border: 1px solid #e2e8f0; padding: 20px; border-radius: 10px; background: white; margin-bottom: 15px; }
+        </style>
+    """, unsafe_allow_html=True)
     
-    if user_role == "Luis (Ops)":
-        st.success("🔒 **Modo Operativo:** Registrando gastos como **PENDIENTE DE PAGO**. La Tesorería aprobará el egreso.")
+    st.markdown("<h1>📁 Registro de Documentos de Compra (FB60)</h1>", unsafe_allow_html=True)
     
-    st.info("💡 **Tip Pro:** Para dividir una factura en varias sedes, registra el mismo N° de Folio varias veces con montos parciales y sedes distintas.")
+    # 1. Cargar Datos Maestros
+    with engine.connect() as conn:
+        suppliers_df = pd.read_sql(text("SELECT id, rut, name FROM suppliers ORDER BY name"), conn)
+        categories_df = pd.read_sql(text("SELECT id, name FROM expense_categories ORDER BY name"), conn)
+
+    # UI de Cabecera
+    st.markdown('<div class="sap-header"><b>DATOS DE CABECERA:</b> Información general del documento legal.</div>', unsafe_allow_html=True)
     
-    with st.form("new_exp", clear_on_submit=True):
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            f = st.date_input("Fecha Documento", datetime.now())
-            m = st.number_input("Monto Bruto ($)", min_value=0)
-            fol = st.number_input("N° Folio / Factura", min_value=0, step=1)
-        with col2:
-            p = st.text_input("Proveedor / Profesional")
-            c = st.selectbox("Cuenta Contable", pd.read_sql("SELECT name FROM expense_categories", engine)['name'].tolist())
-            sd = st.selectbox("Sede", ["Marina", "Campanario", "General"])
-        with col3:
-            is_f = st.checkbox("¿Es Factura con IVA?", value=True)
-            is_c = st.checkbox("¿Gasto Crítico?")
-            st.write("") # Spacer
-            submit = st.form_submit_button("📁 REGISTRAR EGRESO")
-        
-        if submit:
-            neto = round(m / 1.19) if is_f else m
-            iva = m - neto
-            with engine.begin() as conn:
-                conn.execute(text("""
-                    INSERT INTO expense_ledger 
-                    (description, amount_due, net_amount, iva_amount, due_date, status, is_critical, sede, source_sii_folio) 
-                    VALUES (:d, :a, :n, :i, :f, 'PENDING_PAYMENT', :c, :s, :fol)
-                """), 
-                {"d": f"{p}", "a": m, "n": neto, "i": iva, "f": f, "c": is_c, "s": sd, "fol": fol if fol > 0 else None})
-            st.success(f"Gasto registrado: {p} por ${m:,.0f} (Sede: {sd})")
+    # Session state for dynamic calc
+    if 'exp_amount' not in st.session_state: st.session_state.exp_amount = 0.0
+
+    with st.container():
+        c1, c2, c3 = st.columns([2,2,1])
+        with c1:
+            doc_type = st.selectbox("Tipo de Documento", 
+                ["Factura Electrónica (IVA 19%)", "Boleta de Honorarios (Ret. 13.75%)", "Boleta / Voucher / Otros (Exento)"])
+            doc_date = st.date_input("Fecha Contable / Emisión", datetime.now())
+        with c2:
+            # Selector de Proveedor con opción de crear uno rápido
+            supplier_names = suppliers_df['name'].tolist()
+            sel_supp = st.selectbox("Proveedor (Dato Maestro)", ["-- SELECCIONE O CREE NUEVO --"] + supplier_names)
+            doc_folio = st.number_input("Folio Documento (N°)", min_value=1, step=1, value=1)
+        with c3:
+            total_amount = st.number_input("Monto Total ($)", min_value=0, step=100)
+
+    st.markdown('<div class="sap-header"><b>POSICIÓN Y COSTOS:</b> Distribución contable y centros de costo.</div>', unsafe_allow_html=True)
+    
+    with st.container():
+        d1, d2, d3 = st.columns(3)
+        with d1:
+            sel_cat = st.selectbox("Cuenta Contable (Categoría)", categories_df['name'].tolist())
+        with d2:
+            sel_sede = st.selectbox("Centro de Costo (Sede)", ["Marina", "Campanario", "General"])
+        with d3:
+            is_critical = st.toggle("Gasto Crítico (Bloqueante)", value=False)
+
+    # Lógica de Impuestos Automática
+    neto, impuesto = 0, 0
+    if "Factura" in doc_type:
+        neto = round(total_amount / 1.19)
+        impuesto = total_amount - neto
+        tax_label = "IVA (19%)"
+    elif "Honorarios" in doc_type:
+        # En Chile: Bruto - Retención = Liquido. Aquí asumimos total_amount es el BRUTO.
+        impuesto = round(total_amount * 0.1375)
+        neto = total_amount - impuesto
+        tax_label = "Retención (13.75%)"
+    else:
+        neto = total_amount
+        impuesto = 0
+        tax_label = "N/A (Exento)"
+
+    # Resumen de validación
+    st.markdown("---")
+    res_col1, res_col2, res_col3 = st.columns(3)
+    res_col1.metric("Neto / Imponible", f"${neto:,.0f}")
+    res_col2.metric(tax_label, f"${impuesto:,.0f}")
+    res_col3.metric("Total Documento", f"${total_amount:,.0f}")
+
+    if sel_supp == "-- SELECCIONE O CREE NUEVO --":
+        with st.expander("➕ ALTA RÁPIDA DE PROVEEDOR"):
+            with st.form("quick_supp"):
+                q_name = st.text_input("Razón Social / Nombre")
+                q_rut = st.text_input("RUT (ej: 12.345.678-9)")
+                q_cat = st.selectbox("Categoría Predeterminada", categories_df['name'].tolist())
+                if st.form_submit_button("💾 Crear y Vincular"):
+                    if q_name and q_rut:
+                        try:
+                            # Obtener cat id
+                            qc_id = int(categories_df[categories_df['name'] == q_cat]['id'].iloc[0])
+                            with engine.begin() as conn:
+                                conn.execute(text("INSERT INTO suppliers (rut, name, category_id) VALUES (:r, :n, :c)"), 
+                                             {"r": q_rut, "n": q_name, "c": qc_id})
+                            st.success(f"Proveedor {q_name} creado. Por favor selecciona de la lista.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+                    else:
+                        st.warning("Nombre y RUT son obligatorios.")
+
+    if st.button("🏁 CONTABILIZAR DOCUMENTO (POST)", type="primary", use_container_width=True):
+        if total_amount <= 0:
+            st.error("El monto debe ser mayor a cero.")
+        elif sel_supp == "-- SELECCIONE O CREE NUEVO --":
+            st.warning("Debe seleccionar un proveedor válido.")
+        else:
+            try:
+                # Obtener ID del proveedor
+                supp_id = int(suppliers_df[suppliers_df['name'] == sel_supp]['id'].iloc[0])
+                cat_id = int(categories_df[categories_df['name'] == sel_cat]['id'].iloc[0])
+                
+                with engine.begin() as conn:
+                    # Verificar duplicado
+                    dup = conn.execute(text("SELECT uuid FROM expense_ledger WHERE supplier_id = :s AND source_sii_folio = :f"), 
+                                     {"s": supp_id, "f": doc_folio}).fetchone()
+                    
+                    if dup:
+                        st.error(f"⚠️ Documento Duplicado: El folio {doc_folio} ya existe para este proveedor.")
+                    else:
+                        conn.execute(text("""
+                            INSERT INTO expense_ledger 
+                            (description, supplier_id, category_id, amount_due, net_amount, iva_amount, due_date, status, is_critical, sede, source_sii_folio) 
+                            VALUES (:d, :sid, :cid, :a, :n, :i, :f, 'PENDING_PAYMENT', :crit, :s, :fol)
+                        """), 
+                        {
+                            "d": f"{doc_type} {doc_folio} - {sel_cat}",
+                            "sid": supp_id,
+                            "cid": cat_id,
+                            "a": total_amount,
+                            "n": neto,
+                            "i": impuesto,
+                            "f": doc_date,
+                            "crit": is_critical,
+                            "s": sel_sede,
+                            "fol": doc_folio
+                        })
+                        st.success(f"✅ Documento {doc_folio} contabilizado exitosamente para {sel_supp}.")
+                        st.balloons()
+                        st.rerun()
+            except Exception as ex:
+                st.error(f"Error al contabilizar: {ex}")
 
     st.markdown("---")
-    st.subheader("📋 Egresos Recientes")
-    df_recent = pd.read_sql("SELECT uuid, due_date as fecha, description as proveedor, source_sii_folio as folio, amount_due as monto, sede, status FROM expense_ledger ORDER BY created_at DESC LIMIT 10", engine)
+    st.subheader("📋 Egresos Recientes (Audit View)")
+    # Improved Query with Join for Supplier Name
+    query_recent = """
+        SELECT 
+            e.uuid, 
+            e.due_date as fecha, 
+            COALESCE(s.name, e.description) as proveedor,
+            e.source_sii_folio as folio, 
+            e.amount_due as monto, 
+            e.sede, 
+            e.status 
+        FROM expense_ledger e
+        LEFT JOIN suppliers s ON e.supplier_id = s.id
+        ORDER BY e.created_at DESC 
+        LIMIT 15
+    """
+    df_recent = pd.read_sql(query_recent, engine)
     st.dataframe(df_recent, use_container_width=True)
 
     if user_role == "Admin":
@@ -1234,7 +1356,7 @@ elif page == "📥 Sync & Carga":
                             st.error("Datos incompletos.")
 
 # 8. HISTÓRICOS FINANZAS
-elif page == "Históricos Finanzas":
+elif page == "📂 Históricos Finanzas":
     show_help("Reportes Históricos (2025 y anteriores)", """
         Este panel está diseñado para la consolidación de años pasados. 
         Muestra la evolución de costos y ventas históricas para análisis comparativos.

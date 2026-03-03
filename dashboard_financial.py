@@ -4,10 +4,16 @@ import plotly.express as px
 import plotly.graph_objects as go
 from sqlalchemy import text
 
-def render_financial_dashboard(engine, sel_year, sede_filter):
+def render_financial_dashboard(engine, start_date, end_date, sede_filter):
     """
     Renders a premium financial dashboard for the Kent Bell system.
     """
+    
+    # Convert dates to string for SQL if needed, but safer to pass as parameters
+    params = {
+        "start": start_date,
+        "end": end_date
+    }
     
     # --- STYLE INJECTION (GLASSMORPISM) ---
     st.markdown("""
@@ -53,62 +59,71 @@ def render_financial_dashboard(engine, sel_year, sede_filter):
             where_sede_raw = "AND source_hint = 'Campanario'"
 
         # A. Income Data
-        q_inc = f"""
+        q_inc = text(f"""
             SELECT 
                 COALESCE(SUM(amount_expected), 0) as bruto,
-                COALESCE(SUM(commission_amount), 0) as comisiones,
-                COALESCE(SUM(net_income), 0) as neto_comercial
+                COALESCE(SUM(amount_expected - amount_received), 0) as comisiones, -- Asumimos diferencia como costo transaccional si no hay campo comision
+                COALESCE(SUM(amount_received), 0) as neto_comercial
             FROM consolidated_incomes
-            WHERE EXTRACT(YEAR FROM transaction_date) = {sel_year}
+            WHERE transaction_date BETWEEN :start AND :end
             {where_sede_ledger}
-        """
+        """)
         
         # B. Expense Data
-        q_exp = f"""
+        q_exp = text(f"""
             SELECT COALESCE(SUM(amount_due), 0) as total_bruto,
                    COALESCE(SUM(amount_paid), 0) as total_pagado
             FROM expense_ledger
-            WHERE EXTRACT(YEAR FROM due_date) = {sel_year}
+            WHERE due_date BETWEEN :start AND :end
             {where_sede_ledger}
-        """
+        """)
         
         with engine.connect() as conn:
-            income_summary = pd.read_sql(text(q_inc), conn).iloc[0]
-            expense_summary = pd.read_sql(text(q_exp), conn).iloc[0]
+            income_summary = pd.read_sql(q_inc, conn, params=params).iloc[0]
+            expense_summary = pd.read_sql(q_exp, conn, params=params).iloc[0]
             
-            # Monthly flow
-            q_flow = f"""
+            # Monthly flow (ajustado para mostrar solo meses en el rango)
+            q_flow = text(f"""
                 WITH monthly_inc AS (
-                    SELECT EXTRACT(MONTH FROM transaction_date) as mes, SUM(amount_expected) as income
+                    SELECT TO_CHAR(transaction_date, 'YYYY-MM') as mes_sort, TO_CHAR(transaction_date, 'Mon') as mes, SUM(amount_expected) as income
                     FROM consolidated_incomes
-                    WHERE EXTRACT(YEAR FROM transaction_date) = {sel_year} {where_sede_ledger}
-                    GROUP BY 1
+                    WHERE transaction_date BETWEEN :start AND :end {where_sede_ledger}
+                    GROUP BY 1, 2
                 ), monthly_exp AS (
-                    SELECT EXTRACT(MONTH FROM due_date) as mes, SUM(amount_due) as expense
+                    SELECT TO_CHAR(due_date, 'YYYY-MM') as mes_sort, TO_CHAR(due_date, 'Mon') as mes, SUM(amount_due) as expense
                     FROM expense_ledger
-                    WHERE EXTRACT(YEAR FROM due_date) = {sel_year} {where_sede_ledger}
-                    GROUP BY 1
+                    WHERE due_date BETWEEN :start AND :end {where_sede_ledger}
+                    GROUP BY 1, 2
                 )
                 SELECT 
-                    m.mes,
+                    COALESCE(i.mes, e.mes) as mes,
                     COALESCE(i.income, 0) as ingresos,
-                    COALESCE(e.expense, 0) as egresos
-                FROM (SELECT generate_series(1,12) as mes) m
-                LEFT JOIN monthly_inc i ON m.mes = i.mes
-                LEFT JOIN monthly_exp e ON m.mes = e.mes
-                ORDER BY m.mes
-            """
-            df_flow = pd.read_sql(text(q_flow), conn)
+                    COALESCE(e.expense, 0) as egresos,
+                    COALESCE(i.mes_sort, e.mes_sort) as mes_sort
+                FROM monthly_inc i
+                FULL OUTER JOIN monthly_exp e ON i.mes_sort = e.mes_sort
+                ORDER BY mes_sort
+            """)
+            df_flow = pd.read_sql(q_flow, conn, params=params)
             
             # Expense by Category
-            q_cat = f"""
+            q_cat = text(f"""
                 SELECT c.name, SUM(l.amount_due) as total
                 FROM expense_ledger l
                 JOIN expense_categories c ON l.category_id = c.id
-                WHERE EXTRACT(YEAR FROM l.due_date) = {sel_year} {where_sede_ledger}
+                WHERE l.due_date BETWEEN :start AND :end {where_sede_ledger}
                 GROUP BY 1 ORDER BY 2 DESC
-            """
-            df_cat = pd.read_sql(text(q_cat), conn)
+            """)
+            df_cat = pd.read_sql(q_cat, conn, params=params)
+
+             # C. Rentabilidad por Plan
+            q_plans = text(f"""
+                SELECT plan_name, SUM(amount) as total, COUNT(*) as cantidad
+                FROM raw_boxmagic
+                WHERE created_at BETWEEN :start AND :end {where_sede_raw}
+                GROUP BY 1 ORDER BY 2 DESC LIMIT 10
+            """)
+            df_plans = pd.read_sql(q_plans, conn, params=params)
 
         # --- KPI CALCULATIONS ---
         total_income = float(income_summary['bruto'])
@@ -120,6 +135,7 @@ def render_financial_dashboard(engine, sel_year, sede_filter):
 
         # --- UI: HEADER KPIs ---
         st.markdown(f"### 🚀 Rendimiento Financiero: {sede_filter}")
+        st.caption(f"Periodo: {start_date.strftime('%d %b %Y')} - {end_date.strftime('%d %b %Y')}")
         
         k1, k2, k3, k4 = st.columns(4)
         
@@ -128,16 +144,16 @@ def render_financial_dashboard(engine, sel_year, sede_filter):
             <div class="metric-card">
                 <div class="metric-label">Ingreso Bruto</div>
                 <div class="metric-value">${total_income:,.0f}</div>
-                <div class="metric-delta" style="color: #ef4444;">-${total_commissions:,.0f} Comis.</div>
+                <div class="metric-delta" style="color: #64748b;">Monto Esperado</div>
             </div>
             """, unsafe_allow_html=True)
             
         with k2:
             st.markdown(f"""
             <div class="metric-card" style="border-left: 5px solid #10b981;">
-                <div class="metric-label">Margen Comercial</div>
+                <div class="metric-label">Ingreso Neto (Caja)</div>
                 <div class="metric-value">${net_commercial:,.0f}</div>
-                <div class="metric-delta" style="color: #64748b;">Ingreso Neto Ops</div>
+                <div class="metric-delta" style="color: #ef4444;">-${total_commissions:,.0f} Est. Costos</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -146,7 +162,7 @@ def render_financial_dashboard(engine, sel_year, sede_filter):
             <div class="metric-card" style="border-left: 5px solid #ef4444;">
                 <div class="metric-label">Gastos Totales</div>
                 <div class="metric-value">${total_expenses:,.0f}</div>
-                <div class="metric-delta" style="color: #64748b;">OpEx Real</div>
+                <div class="metric-delta" style="color: #64748b;">OpEx del Periodo</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -166,33 +182,32 @@ def render_financial_dashboard(engine, sel_year, sede_filter):
         c1, c2 = st.columns([2, 1])
         
         with c1:
-            st.markdown("#### 💰 Flujo de Caja Mensual")
-            df_flow['Mes'] = df_flow['mes'].apply(lambda x: {1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'}[x])
-            
-            fig_flow = go.Figure()
-            fig_flow.add_trace(go.Bar(
-                x=df_flow['Mes'], y=df_flow['ingresos'],
-                name='Ingresos', marker_color='#10b981',
-                opacity=0.8, borderwidth=0,
-                marker_line_width=0
-            ))
-            fig_flow.add_trace(go.Bar(
-                x=df_flow['Mes'], y=df_flow['egresos'],
-                name='Egresos', marker_color='#ef4444',
-                opacity=0.8, borderwidth=0,
-                marker_line_width=0
-            ))
-            
-            fig_flow.update_layout(
-                barmode='group',
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                margin=dict(l=0, r=0, t=30, b=0),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                yaxis=dict(showgrid=True, gridcolor='#f1f5f9'),
-                font=dict(family="Outfit", size=12)
-            )
-            st.plotly_chart(fig_flow, use_container_width=True)
+            st.markdown("#### 💰 Evolución del Periodo")
+            if not df_flow.empty:
+                fig_flow = go.Figure()
+                fig_flow.add_trace(go.Bar(
+                    x=df_flow['mes'], y=df_flow['ingresos'],
+                    name='Ingresos', marker_color='#10b981',
+                    opacity=0.8
+                ))
+                fig_flow.add_trace(go.Bar(
+                    x=df_flow['mes'], y=df_flow['egresos'],
+                    name='Egresos', marker_color='#ef4444',
+                    opacity=0.8
+                ))
+                
+                fig_flow.update_layout(
+                    barmode='group',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    margin=dict(l=0, r=0, t=30, b=0),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                    yaxis=dict(showgrid=True, gridcolor='#f1f5f9'),
+                    font=dict(family="Outfit", size=12)
+                )
+                st.plotly_chart(fig_flow, use_container_width=True)
+            else:
+                st.info("No hay datos para el rango de fechas seleccionado.")
 
         with c2:
             st.markdown("#### 📋 Mix de Gastos")
@@ -210,75 +225,76 @@ def render_financial_dashboard(engine, sel_year, sede_filter):
                 fig_pie.update_traces(textposition='inside', textinfo='percent')
                 st.plotly_chart(fig_pie, use_container_width=True)
             else:
-                st.info("Sin datos de gastos registrados.")
+                st.info("Sin datos de gastos en este rango.")
 
-        # --- CHART ROW 2: COMPARATIVA & PROYECCIÓN ---
+        # --- CHART ROW 2: STRATEGIC INSIGHTS ---
         st.markdown("---")
         st.markdown("#### 📊 Insights Estratégicos")
         
         i1, i2 = st.columns(2)
         
         with i1:
-            # Distribution by source
-            q_source = f"""
-                SELECT COALESCE(source_hint, 'Otros') as fuente, SUM(amount) as total
-                FROM raw_boxmagic
-                WHERE EXTRACT(YEAR FROM created_at) = {sel_year}
-                {where_sede_raw}
-                GROUP BY 1 ORDER BY 2 DESC
-            """
-            with engine.connect() as conn:
-                df_source = pd.read_sql(text(q_source), conn)
-            
-            st.markdown("**Ingresos por Sub-Fuente (BoxMagic)**")
-            if not df_source.empty:
-                fig_source = px.bar(df_source, x='total', y='fuente', orientation='h',
-                                   color='fuente', color_discrete_sequence=px.colors.qualitative.Safe)
-                fig_source.update_layout(showlegend=False, xaxis_title=None, yaxis_title=None,
-                                        plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-                st.plotly_chart(fig_source, use_container_width=True)
+            st.markdown("**🏆 Planes más Rentables (Top 10)**")
+            if not df_plans.empty:
+                fig_plans = px.bar(df_plans, x='total', y='plan_name', orientation='h',
+                                  text_auto='.2s',
+                                  color='total', color_continuous_scale='Blues')
+                fig_plans.update_layout(showlegend=False, xaxis_title="Monto Total ($)", yaxis_title=None,
+                                       plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+                                       yaxis={'categoryorder':'total ascending'})
+                st.plotly_chart(fig_plans, use_container_width=True)
             else:
-                st.info("No hay datos de fuentes disponibles.")
+                st.info("No hay datos de planes para este periodo.")
 
         with i2:
-            # Sede comparison (if holding)
-            if sede_filter == "Holding (Todas)":
-                st.markdown("**Efectividad Marina vs Campanario**")
-                q_sede_cmp = f"""
-                    SELECT sede, SUM(amount_expected) as income
-                    FROM consolidated_incomes
-                    WHERE EXTRACT(YEAR FROM transaction_date) = {sel_year}
-                    AND sede IN ('Marina', 'Campanario')
-                    GROUP BY 1
-                """
-                with engine.connect() as conn:
-                    df_sede_cmp = pd.read_sql(text(q_sede_cmp), conn)
-                
-                if not df_sede_cmp.empty:
-                    fig_cmp = px.funnel(df_sede_cmp, y='sede', x='income', color='sede')
-                    fig_cmp.update_layout(showlegend=False, 
-                                         plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-                    st.plotly_chart(fig_cmp, use_container_width=True)
-                else:
-                    st.info("Datos insuficientes para comparar sedes.")
+             # Collection Health (Conciliation Status)
+            q_status = text(f"""
+                SELECT status, COUNT(*) as qt, SUM(amount_expected) as total
+                FROM consolidated_incomes
+                WHERE transaction_date BETWEEN :start AND :end {where_sede_ledger}
+                GROUP BY 1
+            """)
+            with engine.connect() as conn:
+                df_status = pd.read_sql(q_status, conn, params=params)
+            
+            st.markdown("**🛡️ Salud de Cobranza (Conciliación)**")
+            if not df_status.empty:
+                fig_status = px.pie(df_status, values='total', names='status', hole=0.4,
+                                   color='status',
+                                   color_discrete_map={
+                                       'MATCH_FULL': '#10b981', 
+                                       'MATCH_PARTIAL': '#3b82f6', 
+                                       'PENDING_DEPOSIT': '#f59e0b',
+                                       'ERROR_GHOST': '#ef4444'
+                                   })
+                fig_status.update_layout(margin=dict(l=0, r=0, t=30, b=0),
+                                        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5))
+                st.plotly_chart(fig_status, use_container_width=True)
             else:
-                # Show status of reconciliation for the selected sede
-                st.markdown(f"**Estatus de Conciliación ({sede_filter})**")
-                q_status = f"""
-                    SELECT status, COUNT(*) as qt
-                    FROM consolidated_incomes
-                    WHERE EXTRACT(YEAR FROM transaction_date) = {sel_year} {where_sede_ledger}
-                    GROUP BY 1
-                """
-                with engine.connect() as conn:
-                    df_status = pd.read_sql(text(q_status), conn)
-                
-                if not df_status.empty:
-                    fig_status = px.pie(df_status, values='qt', names='status', hole=0.4,
-                                       color_discrete_map={'MATCH_FULL': '#10b981', 'MATCH_PARTIAL': '#3b82f6', 'PENDING_DEPOSIT': '#f59e0b'})
-                    st.plotly_chart(fig_status, use_container_width=True)
-                else:
-                    st.info("Sin datos de conciliación.")
+                st.info("Sin datos de conciliación para este periodo.")
+
+        # --- DETALLE DE GASTOS (EXPANDER) ---
+        st.markdown("---")
+        with st.expander("📂 Ver Detalle de Gastos del Periodo"):
+            q_detail = text(f"""
+                SELECT 
+                    l.due_date as fecha, 
+                    c.name as categoria, 
+                    l.description as descripcion, 
+                    l.amount_due as monto, 
+                    l.status as estado
+                FROM expense_ledger l
+                JOIN expense_categories c ON l.category_id = c.id
+                WHERE l.due_date BETWEEN :start AND :end {where_sede_ledger}
+                ORDER BY l.due_date DESC
+            """)
+            with engine.connect() as conn:
+                df_detail = pd.read_sql(q_detail, conn, params=params)
+            
+            if not df_detail.empty:
+                st.dataframe(df_detail, use_container_width=True)
+            else:
+                st.info("No se encontraron gastos registrados para este periodo.")
 
     except Exception as e:
         st.error(f"Error crítico en el Dashboard Financiero: {e}")

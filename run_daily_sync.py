@@ -1,38 +1,52 @@
 
 import os
-import time
-import subprocess
+import sys
+import logging
 from datetime import datetime
 
-print("============================================================")
-print(f"🔄 INICIO DE SINCRONIZACIÓN DIARIA: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-print("============================================================")
+# Asegurar que el directorio raíz está en el path
+sys.path.append(os.getcwd())
 
-scripts = [
-    ("1. Solicitar exportación en VirtualPOS", "python virtualpos_downloader_final.py"),
-    ("2. Pausa para envío de correo (15s)", "sleep 15" if os.name == 'posix' else "timeout 15 /nobreak"),
-    ("3. Buscar y descargar archivo desde el correo", "python vpos_email_fetcher.py"),
-    ("4. Procesar el CSV de VirtualPOS e insertar en la BD", "python process_vpos_csv.py")
-]
+try:
+    from etl_manager import ETLManager
+except ImportError:
+    print("❌ Error: No se pudo importar ETLManager. Asegúrate de correr este script en la raíz del proyecto.")
+    sys.exit(1)
 
-for desc, cmd in scripts:
-    print(f"\n▶ Ejecutando: {desc}")
-    start = time.time()
+# Configurar logs para ejecución headless
+LOG_DIR = os.path.join(os.getcwd(), "logs")
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
+
+log_file = os.path.join(LOG_DIR, f"daily_sync_{datetime.now().strftime('%Y%m%d')}.log")
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger("HeadlessSync")
+
+def main():
+    logger.info("============== INICIANDO SINCRONIZACIÓN DIARIA (HEADLESS) ==============")
+    startTime = datetime.now()
     
-    try:
-        env = os.environ.copy()
-        env["PYTHONIOENCODING"] = "utf-8"
-        # Use shell=True to handle the timeout command on Windows properly
-        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True, encoding="utf-8", env=env)
-        print(f"✅ Completado en {time.time() - start:.1f}s")
-        print(f"|  Salida:\n{result.stdout.strip()}")
+    manager = ETLManager()
+    success, results = manager.run_full_sync()
+    
+    endTime = datetime.now()
+    duration = endTime - startTime
+    
+    logger.info(f"Sincronización finalizada en {duration.total_seconds():.1f} segundos.")
+    logger.info(f"Estatus Global: {'✅ ÉXITO' if success else '❌ FALLO'}")
+    
+    logger.info("Detalle por módulo:")
+    for mod, res in results.items():
+        logger.info(f"  - {mod.capitalize()}: {res}")
         
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Error durante la ejecución ({time.time() - start:.1f}s):")
-        print(f"|  Manejo de Error:\n{e.stderr.strip() if hasattr(e, 'stderr') and e.stderr else str(e)}")
-        print("❗ Deteniendo sincronización por error crítico.")
-        break
-        
-print("============================================================")
-print(f"✅ FIN DE SINCRONIZACIÓN DIARIA: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-print("============================================================")
+    logger.info("========================================================================")
+
+if __name__ == "__main__":
+    main()
