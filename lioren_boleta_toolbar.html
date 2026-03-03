@@ -1,0 +1,25 @@
+<md-toolbar class="md-hue-2 secondarytoolbar _md _md-toolbar-transitions">
+            <div class="md-toolbar-tools">
+                <h2 class="md-subhead">
+                    <span>Boletas Exentas</span>
+                </h2>
+                <span flex="" class="flex"></span>
+                                <form action="/empresas/the-boos-box-spa/boletaexentas/xls" method="POST" class="ng-pristine ng-valid" aria-label="" md-labeled-by-tooltip="md-tooltip-38">
+                    <!-- ngIf: !boletaexentas.pagination.data.length || boletaexentas.pagination.total > 10000 -->
+                    <input type="hidden" name="_token" value="liCB7BiHUoS0wDBzR1UyIfJOu3QuM0WumG4w9EsE" autocomplete="off" style="">
+                    <input type="hidden" name="data" value="{&quot;folio&quot;:&quot;&quot;,&quot;fecha0&quot;:&quot;2026-03-01T03:00:00.000Z&quot;,&quot;fecha1&quot;:null,&quot;rut&quot;:&quot;&quot;,&quot;rs&quot;:&quot;&quot;,&quot;wc_id&quot;:null,&quot;sfy_id&quot;:null,&quot;jumps_id&quot;:null,&quot;rpp&quot;:10,&quot;page&quot;:1,&quot;orderby&quot;:&quot;fecha&quot;,&quot;direction&quot;:&quot;desc&quot;}" autocomplete="off" style="">
+                    <button class="md-icon-button md-button md-ink-ripple" type="submit" ng-transclude="" aria-label="descargar en excel" ng-disabled="!boletaexentas.pagination.data.length || boletaexentas.pagination.total &gt; 10000">
+                        
+                          <md-icon md-font-icon="fa fa-file-excel-o" class="ng-scope md-font material-icons fa fa-file-excel-o" role="img" aria-hidden="true"></md-icon>
+                    </button>
+                </form>
+                                                <button class="md-icon-button md-button md-ink-ripple" type="button" ng-transclude="" aria-label="emitir documento" ng-click="gotoEmpresasNonav('boletaexentas/create')">
+                    
+                      <md-icon md-font-icon="fa-plus" class="fa ng-scope md-font material-icons fa-plus" role="img" aria-hidden="true"></md-icon>
+                </button>
+                                <button class="md-icon-button md-button md-ink-ripple" type="button" ng-transclude="" aria-label="filtros de busqueda" ng-click="toggleRight();closeLeft();">
+                    
+                      <md-icon md-font-icon="fa-filter" class="fa ng-scope md-font material-icons fa-filter" role="img" aria-hidden="true"></md-icon>
+                </button>
+            </div>
+        </md-toolbar>

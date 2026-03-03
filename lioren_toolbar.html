@@ -1,0 +1,41 @@
+
+		<div class="md-toolbar-tools layout-align-space-between-center layout-row" layout="row" layout-align="space-between center">
+			<div layout="column" class="layout-column">
+				<h1 class="md-toolbar-tools">Panel de Empresas</h1>
+				<p>THE BOOS BOX CAMPANARIO</p>
+			</div>
+			<md-menu class="md-menu ng-scope _md">
+				<button class="md-icon-button md-button md-ink-ripple" type="button" ng-transclude="" aria-label="More" ng-click="$mdMenu.open($event)" aria-haspopup="true" aria-expanded="false" aria-owns="menu_container_0">
+					<md-icon md-font-icon="fa fa-cog" class="ng-scope md-font material-icons fa fa-cog" role="img" aria-hidden="true"></md-icon>
+				</button>
+				
+			<div class="_md md-open-menu-container md-whiteframe-z2" id="menu_container_0" aria-hidden="true" style="display: none;"><md-menu-content width="4" role="menu">
+										<md-menu-item>
+						<button class="md-button md-ink-ripple" type="button" ng-transclude="" ng-click="gotoEmpresasNonav('admin')" role="menuitem">
+							<md-icon md-font-icon="fa-cogs" class="fa ng-scope md-font material-icons fa-cogs" md-menu-align-target="" role="img" aria-label="fa-cogs"></md-icon>
+							Administración
+						</button>
+					</md-menu-item>
+					<md-menu-item>
+						<button class="md-button md-ink-ripple" type="button" ng-transclude="" ng-click="gotoEmpresasNonav('certificados')" role="menuitem">
+							<md-icon md-font-icon="fa-certificate" class="fa ng-scope md-font material-icons fa-certificate" md-menu-align-target="" role="img" aria-label="fa-certificate"></md-icon>
+							Certificado Digital
+						</button>
+					</md-menu-item>
+					<md-menu-divider role="separator"></md-menu-divider>
+					<md-menu-item>
+						<button class="md-button md-ink-ripple" type="button" ng-transclude="" ng-click="gotoEmpresasNonav('printers/thermal')" role="menuitem">
+							<md-icon md-font-icon="fa fa-print" md-menu-align-target="" class="ng-scope md-font material-icons fa fa-print" role="img" aria-label="fa fa-print"></md-icon>
+							Impresoras Térmicas
+						</button>
+					</md-menu-item>
+					<md-divider></md-divider>
+															<md-menu-item>
+						<a class="md-button md-ink-ripple" ng-transclude="" ng-href="/empresas" role="menuitem" href="/empresas">
+							<md-icon md-font-icon="fa-refresh" class="fa ng-scope md-font material-icons fa-refresh" md-menu-align-target="" role="img" aria-label="fa-refresh"></md-icon>
+							Cambiar de empresa
+						</a>
+					</md-menu-item>
+				</md-menu-content></div></md-menu>
+		</div>
+	
