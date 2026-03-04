@@ -42,7 +42,7 @@ def generate_recovery_list():
             df_active = pd.read_sql(text(query_active), conn)
             
         if df_inactive.empty:
-            print("❌ No hay datos de inactivos para procesar.")
+            print("ERROR: No hay datos de inactivos para procesar.")
             return
 
         # 3. De-duplicar Inactivos (obtener el último registro por email)
@@ -70,7 +70,7 @@ def generate_recovery_list():
         df_target = df_prospects[~df_prospects['recuperado']].copy()
         
         recovered_count = len(df_prospects) - len(df_target)
-        print(f"✅ Alumnos ya recuperados (omitiendo): {recovered_count}")
+        print(f"SUCCESS: Alumnos ya recuperados (omitiendo): {recovered_count}")
         print(f"🎯 Prospectos reales a contactar: {len(df_target)}")
 
         # 5. Calcular métricas finales y precios
@@ -106,11 +106,11 @@ def generate_recovery_list():
         filepath = os.path.join(os.getcwd(), filename)
         df_final.to_excel(filepath, index=False)
         
-        print(f"✅ ÉXITO: Campaña generada en {filepath}")
+        print(f"SUCCESS: ÉXITO: Campaña generada en {filepath}")
         return filepath
 
     except Exception as e:
-        print(f"❌ Error crítico: {e}")
+        print(f"ERROR: Error crítico: {e}")
         import traceback
         traceback.print_exc()
         return None

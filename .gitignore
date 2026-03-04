@@ -10,6 +10,7 @@ build/
 # ===== Credenciales y Secretos =====
 .env
 boxmagic_cookies.json
+bm_session.json
 
 # ===== Archivos de Debug/Temporales =====
 debug_*.png

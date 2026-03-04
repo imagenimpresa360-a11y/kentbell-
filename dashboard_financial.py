@@ -275,7 +275,7 @@ def render_financial_dashboard(engine, start_date, end_date, sede_filter):
 
         # --- DETALLE DE GASTOS (EXPANDER) ---
         st.markdown("---")
-        with st.expander("📂 Ver Detalle de Gastos del Periodo"):
+        with st.expander("VER Detalle de Gastos del Periodo"):
             q_detail = text(f"""
                 SELECT 
                     l.due_date as fecha, 

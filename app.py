@@ -17,6 +17,7 @@ from process_bm_csv import process_bm_dataframe, parse_bm_csv_content
 from process_vpos_csv import process_vpos_content
 from process_active_students import process_active_students_content
 from dashboard_financial import render_financial_dashboard
+from dashboard_cuadratura import render_cuadratura_dashboard
 from etl_manager import ETLManager
 
 # --- CONSTANTES DE NEGOCIO ---
@@ -231,6 +232,7 @@ with st.sidebar:
     menu_groups = {
         "📊 Dashboards": [
             "📊 Dashboard General (P&L)",
+            "⚖️ Cuadratura Bancaria",
             "📈 Dashboard BoxMagic", 
             "💳 Dashboard VirtualPOS",
             "🧾 Dashboard Lioren",
@@ -247,14 +249,14 @@ with st.sidebar:
             "📑 Reportes Legales",
             "📉 Alumnos Inactivos",
             "🚨 Alertas & Control",
-            "📂 Históricos Finanzas"
+            "Docs Históricos Finanzas"
         ]
     }
 
     # Definir permisos por rol (visibilidad de páginas)
     role_permissions = {
         "Luis (Ops)": ["💸 Registrar Egresos", "🏃‍♂️ Gestión de Coaches", "📑 Reportes Legales", "📥 Sync & Carga"],
-        "Finanzas": ["📊 Dashboard General (P&L)", "🏦 Dashboard Banco", "📥 Sync & Carga", "📑 Reportes Legales", "🚨 Alertas & Control", "🧾 Dashboard Lioren", "🏦 Caja & Banco", "🔐 Cierre Fiscal", "📂 Históricos Finanzas"],
+        "Finanzas": ["📊 Dashboard General (P&L)", "🏦 Dashboard Banco", "📥 Sync & Carga", "📑 Reportes Legales", "🚨 Alertas & Control", "🧾 Dashboard Lioren", "🏦 Caja & Banco", "🔐 Cierre Fiscal", "Docs Históricos Finanzas"],
         "Cobranza": ["📉 Alumnos Inactivos", "📈 Dashboard BoxMagic", "💳 Dashboard VirtualPOS"],
         "Admin": [item for sublist in menu_groups.values() for item in sublist]
     }
@@ -299,7 +301,7 @@ with h_col1:
         if not last_sync.empty:
             sync_dt = datetime.strptime(last_sync.iloc[0]['value'], "%Y-%m-%d %H:%M")
             if (datetime.now() - sync_dt).days > 1:
-                st.warning(f"⚠️ Los datos de ventas no se han actualizado desde hace {(datetime.now() - sync_dt).days} días. Ve a 'Sync & Carga' para actualizar.")
+                st.warning(f"WARN:️ Los datos de ventas no se han actualizado desde hace {(datetime.now() - sync_dt).days} días. Ve a 'Sync & Carga' para actualizar.")
 with h_col2:
     try:
         st.image("logo_the_boos.jpg", width=120)
@@ -319,25 +321,30 @@ if page == "📊 Dashboard General (P&L)":
     # Call the new premium dashboard
     render_financial_dashboard(engine, start_date, end_date, sede_filter)
 
+# 1.1 CUADRATURA (Reconciliation Engine)
+elif page == "⚖️ Cuadratura Bancaria":
+    sede_filter = st.radio("🏢 Sede de Control", ["Campanario", "Marina"], horizontal=True)
+    render_cuadratura_dashboard(engine, start_date, end_date, sede_filter)
+
 # 1.2 DASHBOARD BOXMAGIC (Expert Commercial View)
 elif page == "📈 Dashboard BoxMagic":
     st.info("🎯 **Expert Analytics**: Este panel analiza la performance comercial de BoxMagic. Cuantifica los ingresos brutos y netos por sede y plan.")
     
     try:
-        # Query matching my updated ingestion logic (using raw_data hint)
-        query_bm = f"""
-            SELECT 
-                amount as monto, 
-                created_at as fecha, 
-                plan_name, 
-                COALESCE(source_hint, 'General') as sede
+        # Expert Resolution: Union of historical (manual) and automated (bot) data with granular date filter
+        query_bm = text("""
+            SELECT amount as monto, created_at as fecha, plan_name, COALESCE(source_hint, 'General') as sede
             FROM raw_boxmagic 
-            WHERE EXTRACT(YEAR FROM created_at) = {sel_year}
-        """
-        df_bm = pd.read_sql(query_bm, engine)
+            WHERE created_at::date BETWEEN :start AND :end
+            UNION ALL
+            SELECT monto, fecha_pago as fecha, plan as plan_name, sede
+            FROM raw_boxmagic_pagos
+            WHERE fecha_pago::date BETWEEN :start AND :end
+        """)
+        df_bm = pd.read_sql(query_bm, engine, params={"start": start_date, "end": end_date})
         
         if df_bm.empty:
-            st.warning("⚠️ No hay datos cargados en 'raw_boxmagic'. Por favor, sube las planillas en la sección **Sync & Carga**.")
+            st.warning("WARN:️ No hay datos cargados en el ecosistema BoxMagic. Por favor, realiza una sincronización.")
         else:
             tabs_bm = st.tabs(["🌎 Consolidado BM", "🏖️ Marina", "🏔️ Campanario"])
             
@@ -373,6 +380,16 @@ elif page == "📈 Dashboard BoxMagic":
                         plan_dist = sdf.groupby('plan_name')['monto'].agg(['count', 'sum']).sort_values('sum', ascending=False).head(10)
                         st.bar_chart(plan_dist['sum'])
                         st.dataframe(plan_dist, use_container_width=True)
+
+                        st.markdown("**Detalle de Registros (Últimos 50)**")
+                        # Show individual rows for transparency
+                        df_show = sdf.sort_values('fecha', ascending=False).head(50).copy()
+                        if 'fecha' in df_show.columns:
+                            df_show['fecha'] = pd.to_datetime(df_show['fecha']).dt.strftime('%d/%m/%Y')
+                        if 'monto' in df_show.columns:
+                            df_show['monto'] = df_show['monto'].apply(lambda x: f"${x:,.0f}")
+                        
+                        st.dataframe(df_show, use_container_width=True)
 
     except Exception as e: st.error(f"Error en analítica BoxMagic: {e}")
 
@@ -448,7 +465,7 @@ elif page == "🧾 Dashboard Lioren":
             l2.metric("N° Documentos", len(df_l))
             l3.metric("Ticket Promedio (Exento)", f"${(total_fact/len(df_l) if len(df_l)>0 else 0):,.0f}")
             
-            st.success("✅ Nota: Todas las boletas registradas operan bajo régimen **Exento de IVA**.")
+            st.success("SUCCESS: Nota: Todas las boletas registradas operan bajo régimen **Exento de IVA**.")
             
             st.markdown("---")
             st.markdown("**Cronología de Facturación**")
@@ -509,7 +526,7 @@ elif page == "🏦 Dashboard Banco":
                         sum_bank = -df_orphan[df_orphan['id'].isin(bank_sel)]['amount'].sum() if bank_sel else 0
                         st.metric("Total Banco", f"${sum_bank:,.0f}")
                     else:
-                        st.success("✅ Todo conciliado en Banco.")
+                        st.success("SUCCESS: Todo conciliado en Banco.")
                         sum_bank = 0
 
                 with c_right:
@@ -531,7 +548,7 @@ elif page == "🏦 Dashboard Banco":
                 
                 if sum_bank > 0 and sum_ledger > 0:
                     if abs(diff) < 50: # Tolerancia de $50 pesos
-                        st.success(f"✅ MATCH CONFIRMADO (Dif: ${diff})")
+                        st.success(f"SUCCESS: MATCH CONFIRMADO (Dif: ${diff})")
                         if st.button("🔗 CONCILIAR Y PAGAR", type="primary", use_container_width=True):
                             with engine.begin() as conn:
                                 # 1. Update Ledger
@@ -550,7 +567,7 @@ elif page == "🏦 Dashboard Banco":
                             st.success("Operación Exitosa: Gastos marcados como PAGADOS y vinculados al Banco.")
                             st.rerun()
                     else:
-                        st.error(f"⚠️ NO CUADRA: Diferencia de ${diff:,.0f}")
+                        st.error(f"WARN:️ NO CUADRA: Diferencia de ${diff:,.0f}")
 
             with tabs_bank[1]:
                 # Gráfico de barras diarias
@@ -604,7 +621,7 @@ elif page == "🏃‍♂️ Gestión de Coaches":
             with r2c3:
                 sede_c = st.selectbox("Sede de Imputación", ["Marina", "Campanario", "General"])
             
-            if st.form_submit_button("✅ Calcular y Guardar Honorario"):
+            if st.form_submit_button("SUCCESS: Calcular y Guardar Honorario"):
                 total = horas * tarifa
                 due_date = f"{anio}-{mes:02d}-01" # Fecha estimada de pago
                 
@@ -822,7 +839,7 @@ elif page == "📉 Alumnos Inactivos":
         )
         
         st.markdown("---")
-        st.subheader("✅ Alumnos Recuperados (Cruce con Activos)")
+        st.subheader("SUCCESS: Alumnos Recuperados (Cruce con Activos)")
         st.info("Estos alumnos aparecían como inactivos, pero figuran en la lista de activos actual.")
         
         rec_df = pd.read_sql(f"SELECT * FROM view_recovered_users WHERE EXTRACT(YEAR FROM reactivation_date) = {sel_year}", engine)
@@ -970,9 +987,9 @@ elif page == "🏦 Caja & Banco":
             with c_res1:
                 if total_bank > 0 and total_ledger > 0:
                     if abs(diff) < 1:
-                        st.success(f"✅ CUADRE PERFECTO: ${total_bank:,.0f}")
+                        st.success(f"SUCCESS: CUADRE PERFECTO: ${total_bank:,.0f}")
                     else:
-                        st.error(f"⚠️ DIFERENCIA: ${diff:,.0f}")
+                        st.error(f"WARN:️ DIFERENCIA: ${diff:,.0f}")
             
             with c_res2:
                 if st.button("🔗 VINCULAR MOVIMIENTOS SELECCIONADOS", use_container_width=True):
@@ -996,7 +1013,7 @@ elif page == "🏦 Caja & Banco":
                     elif abs(diff) >= 1:
                         st.error("No se puede vincular: El total del banco debe coincidir con el total del ledger.")
         else:
-            st.success("✅ No quedan movimientos bancarios por conciliar.")
+            st.success("SUCCESS: No quedan movimientos bancarios por conciliar.")
 
 # 6. REGISTRAR EGRESOS (MODO SAP FB60)
 elif page == "💸 Registrar Egresos":
@@ -1106,7 +1123,7 @@ elif page == "💸 Registrar Egresos":
                                      {"s": supp_id, "f": doc_folio}).fetchone()
                     
                     if dup:
-                        st.error(f"⚠️ Documento Duplicado: El folio {doc_folio} ya existe para este proveedor.")
+                        st.error(f"WARN:️ Documento Duplicado: El folio {doc_folio} ya existe para este proveedor.")
                     else:
                         conn.execute(text("""
                             INSERT INTO expense_ledger 
@@ -1125,7 +1142,7 @@ elif page == "💸 Registrar Egresos":
                             "s": sel_sede,
                             "fol": doc_folio
                         })
-                        st.success(f"✅ Documento {doc_folio} contabilizado exitosamente para {sel_supp}.")
+                        st.success(f"SUCCESS: Documento {doc_folio} contabilizado exitosamente para {sel_supp}.")
                         st.balloons()
                         st.rerun()
             except Exception as ex:
@@ -1153,7 +1170,7 @@ elif page == "💸 Registrar Egresos":
 
     if user_role == "Admin":
         with st.expander("🗑️ Eliminar Gasto (Admin)"):
-            st.warning("⚠️ Esta acción es irreversible. Eliminará el gasto del Dashboard y cualquier vínculo con Coaches.")
+            st.warning("WARN:️ Esta acción es irreversible. Eliminará el gasto del Dashboard y cualquier vínculo con Coaches.")
         
         # 1. Traer lista de egresos recientes para el selector (Zero Copy)
         df_to_del = pd.read_sql("""
@@ -1193,7 +1210,7 @@ elif page == "💸 Registrar Egresos":
                         st.success("Gasto y registros asociados eliminados correctamente.")
                         st.rerun()
                     except Exception as e:
-                        st.error(f"❌ Error crítico de base de datos: {e}")
+                        st.error(f"ERROR: Error crítico de base de datos: {e}")
         else:
             st.info("No hay egresos registrados para eliminar.")
 
@@ -1217,7 +1234,7 @@ elif page == "📥 Sync & Carga":
         with st.spinner("Sincronizando todas las fuentes de datos y ejecutando conciliación..."):
             res = manager.run_full_sync()
         
-        st.success("✅ Sincronización completada.")
+        st.success("SUCCESS: Sincronización completada.")
         cols = st.columns(len(res))
         for i, (src, status) in enumerate(res.items()):
             color = "normal" if "Success" in status else "inverse"
@@ -1261,7 +1278,7 @@ elif page == "📥 Sync & Carga":
                 if ins > 0:
                     reconcile()
                     update_sync_date('last_sync_boxmagic')
-                    st.success(f"✅ Marina: {ins} registros cargados.")
+                    st.success(f"SUCCESS: Marina: {ins} registros cargados.")
                 else: st.error("Error en formato o archivo vacío.")
 
         with col_camp:
@@ -1274,7 +1291,7 @@ elif page == "📥 Sync & Carga":
                 if ins > 0:
                     reconcile()
                     update_sync_date('last_sync_boxmagic')
-                    st.success(f"✅ Campanario: {ins} registros cargados.")
+                    st.success(f"SUCCESS: Campanario: {ins} registros cargados.")
                 else: st.error("Error en formato o archivo vacío.")
 
     with t2:
@@ -1289,7 +1306,7 @@ elif page == "📥 Sync & Carga":
             if ins > 0 or skp > 0:
                 reconcile()
                 update_sync_date('last_sync_vpos')
-                st.success(f"✅ VirtualPOS: {ins} nuevos, {skp} duplicados omitidos.")
+                st.success(f"SUCCESS: VirtualPOS: {ins} nuevos, {skp} duplicados omitidos.")
             else:
                 st.error("No se pudieron procesar registros. Revisa el formato.")
 
@@ -1307,10 +1324,10 @@ elif page == "📥 Sync & Carga":
                 
                 if success:
                     update_sync_date('last_sync_lioren')
-                    st.success(f"✅ Ventas integradas: {result} registros procesados.")
+                    st.success(f"SUCCESS: Ventas integradas: {result} registros procesados.")
                     # st.rerun() # Omitimos rerun inmediato para que el usuario vea el mensaje de éxito
                 else:
-                    st.error(f"❌ Error al procesar: {result}")
+                    st.error(f"ERROR: Error al procesar: {result}")
     with t4:
         st.caption(f"📅 Última carga: {sync_dates.get('last_sync_bci', 'Nunca')}")
         
@@ -1330,10 +1347,10 @@ elif page == "📥 Sync & Carga":
                 if success:
                     reconcile_bank_expenses()
                     update_sync_date('last_sync_bci')
-                    st.success(f"✅ {msg}")
+                    st.success(f"SUCCESS: {msg}")
                     # st.rerun()
                 else:
-                    st.error(f"❌ Error: {msg}")
+                    st.error(f"ERROR: Error: {msg}")
                     
         with col_manual:
             st.markdown("#### ✍️ Ingreso Manual")
@@ -1356,7 +1373,7 @@ elif page == "📥 Sync & Carga":
                             st.error("Datos incompletos.")
 
 # 8. HISTÓRICOS FINANZAS
-elif page == "📂 Históricos Finanzas":
+elif page == "Docs Históricos Finanzas":
     show_help("Reportes Históricos (2025 y anteriores)", """
         Este panel está diseñado para la consolidación de años pasados. 
         Muestra la evolución de costos y ventas históricas para análisis comparativos.

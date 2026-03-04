@@ -35,7 +35,7 @@ async def login_virtualpos(page):
             await link.first.click()
             await asyncio.sleep(3)
     except Exception as e:
-        print(f"      ⚠ Nota: {e}")
+        print(f"      WARN: Nota: {e}")
 
     # Llenar credenciales
     try:
@@ -46,9 +46,9 @@ async def login_virtualpos(page):
         
         # Esperar a que desaparezca el login o cargue el dashboard
         await asyncio.sleep(10)
-        print("      ✓ Login enviado")
+        print("      OK: Login enviado")
     except Exception as e:
-        print(f"      ❌ Error en login: {e}")
+        print(f"      ERROR: Error en login: {e}")
         return False
         
     return True
@@ -126,12 +126,12 @@ async def extract_dashboard_data(page):
 
         # Capturar screenshot para evidencia
         await page.screenshot(path=os.path.join(DOWNLOAD_DIR, 'dashboard_evidence.png'))
-        print("      ✓ Screenshot de evidencia guardado")
+        print("      OK: Screenshot de evidencia guardado")
         
         return data
 
     except Exception as e:
-        print(f"      ❌ Error extrayendo datos: {e}")
+        print(f"      ERROR: Error extrayendo datos: {e}")
         return []
 
 async def scrape_virtualpos_dashboard(headless=True):
@@ -164,13 +164,13 @@ async def scrape_virtualpos_dashboard(headless=True):
                         writer.writeheader()
                         writer.writerows(data)
                         
-                    print(f"      ✓ Archivo guardado: {filename}")
-                    print(f"      ✓ Ubicación: {file_path}")
+                    print(f"      OK: Archivo guardado: {filename}")
+                    print(f"      OK: Ubicación: {file_path}")
                 else:
-                    print("      ⚠ No se extrajeron datos para guardar")
+                    print("      WARN: No se extrajeron datos para guardar")
             
         except Exception as e:
-            print(f"\n❌ ERROR GLOBAL: {e}")
+            print(f"\nERROR: ERROR GLOBAL: {e}")
             await page.screenshot(path='error_vpos_scraper.png')
             
         finally:

@@ -87,9 +87,9 @@ elif option == "Dashboard General":
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Estado de Conectores")
-        st.success("✅ BoxMagic (Activo)")
-        st.warning("⚠️ VirtualPOS (En proceso)")
-        st.success("✅ PostgreSQL (Conectado)")
+        st.success("SUCCESS: BoxMagic (Activo)")
+        st.warning("WARN:️ VirtualPOS (En proceso)")
+        st.success("SUCCESS: PostgreSQL (Conectado)")
     
     with col2:
         st.subheader("Acciones Rápidas")

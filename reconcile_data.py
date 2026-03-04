@@ -120,7 +120,7 @@ def reconcile():
             ))
                 
         conn.commit()
-        print("\n✅ Conciliación impositiva completada.")
+        print("\nSUCCESS: Conciliación impositiva completada.")
         
     except Exception as e:
         conn.rollback()

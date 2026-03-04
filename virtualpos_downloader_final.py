@@ -30,7 +30,7 @@ async def login(page):
     try:
         await page.wait_for_selector('input[type="email"], input[placeholder*="Email"]', timeout=20000)
     except:
-        print("      ⚠ No se encontró campo de email. Capturando pantalla...")
+        print("      WARN: No se encontró campo de email. Capturando pantalla...")
         await page.screenshot(path=os.path.join(DOWNLOAD_DIR, 'debug_login_no_field.png'))
         return False
 
@@ -57,11 +57,11 @@ async def login(page):
 
     current_url = page.url
     if "login" in current_url.lower():
-        print(f"      ❌ Sigue en login: {current_url}")
+        print(f"      ERROR: Sigue en login: {current_url}")
         await page.screenshot(path=os.path.join(DOWNLOAD_DIR, 'debug_login_failed.png'))
         return False
 
-    print(f"      ✓ Login exitoso. URL: {current_url}")
+    print(f"      OK: Login exitoso. URL: {current_url}")
     return True
 
 
@@ -78,11 +78,11 @@ async def navigate_to_transactions(page):
 
     # Verificar si llegamos
     if "transacciones" in page.url or "finanzas" in page.url:
-        print("      ✓ En la sección de Transacciones (por URL)")
+        print("      OK: En la sección de Transacciones (por URL)")
         return True
 
     # Estrategia 2: Navegación por menú (si la URL directa no funcionó)
-    print("      ⚠ URL directa no funcionó, intentando navegación por menú...")
+    print("      WARN: URL directa no funcionó, intentando navegación por menú...")
 
     try:
         # Ir al dashboard primero
@@ -114,15 +114,15 @@ async def navigate_to_transactions(page):
                     if await submenu.count() > 0 and await submenu.is_visible():
                         await submenu.click()
                         await asyncio.sleep(8)
-                        print(f"      ✓ Submenú clickeado. URL: {page.url}")
+                        print(f"      OK: Submenú clickeado. URL: {page.url}")
                         return True
                     break
             except Exception as e:
-                print(f"      ⚠ {sel}: {e}")
+                print(f"      WARN: {sel}: {e}")
                 continue
 
     except Exception as e:
-        print(f"      ❌ Navegación por menú falló: {e}")
+        print(f"      ERROR: Navegación por menú falló: {e}")
 
     return False
 
@@ -138,7 +138,7 @@ async def find_and_download(page):
     html = await page.content()
     with open(os.path.join(DOWNLOAD_DIR, 'transacciones_debug.html'), 'w', encoding='utf-8') as f:
         f.write(html)
-    print("      ✓ HTML pre-click guardado para debug")
+    print("      OK: HTML pre-click guardado para debug")
 
     # --- ESTRATEGIA PRINCIPAL: Exportar → Modal → OK / Confirmar ---
     export_btn_selectors = [
@@ -155,7 +155,7 @@ async def find_and_download(page):
             btn = page.locator(sel).first
             if await btn.count() > 0 and await btn.is_visible():
                 text = await btn.inner_text()
-                print(f"      ✓ Botón encontrado: '{text.strip()}' [{sel}]")
+                print(f"      OK: Botón encontrado: '{text.strip()}' [{sel}]")
                 print("        Haciendo clic...")
                 await btn.click()
                 await asyncio.sleep(3)  # Dar tiempo al modal para aparecer
@@ -181,14 +181,14 @@ async def find_and_download(page):
                         conf_btn = page.locator(conf_sel).first
                         if await conf_btn.count() > 0 and await conf_btn.is_visible():
                             conf_text = await conf_btn.inner_text()
-                            print(f"        ✓ Modal/confirmación encontrada: '{conf_text.strip()}' [{conf_sel}]")
+                            print(f"        OK: Modal/confirmación encontrada: '{conf_text.strip()}' [{conf_sel}]")
                             
                             # ANALIZAR SI ES EMAIL O DESCARGA
                             modal_text = await page.locator('.modal-body, .modal').first.inner_text()
                             if "correo" in modal_text.lower() or "email" in modal_text.lower():
                                 print("        📧 EXPORTACIÓN POR EMAIL DETECTADA.")
                                 await conf_btn.click(force=True)
-                                print("        ✓ Confirmación de envío por email completada.")
+                                print("        OK: Confirmación de envío por email completada.")
                                 return "EMAIL_SENT"
                             
                             print("        Haciendo clic en confirmación y esperando descarga...")
@@ -201,10 +201,10 @@ async def find_and_download(page):
                                            f"vpos_transacciones_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
                                 path = os.path.join(DOWNLOAD_DIR, filename)
                                 await download.save_as(path)
-                                print(f"      ✅ Descarga exitosa: {path}")
+                                print(f"      SUCCESS: Descarga exitosa: {path}")
                                 return path
                             except Exception as e_dl:
-                                print(f"        ⚠ No se inició descarga tras confirmación: {e_dl}")
+                                print(f"        WARN: No se inició descarga tras confirmación: {e_dl}")
                                 # Tal vez era email pero no detectamos el texto
                                 return "CONFIRMED_BUT_NO_DOWNLOAD"
                     except Exception as e:
@@ -212,7 +212,7 @@ async def find_and_download(page):
 
                 if not confirmed:
                     # El clic en Exportar quizás disparó download directo (sin modal)
-                    print("        ⚠ No se encontró modal. Intentando download directo post-clic...")
+                    print("        WARN: No se encontró modal. Intentando download directo post-clic...")
                     try:
                         async with page.expect_download(timeout=20000) as dl:
                             # Re-clic por si el primero no disparó
@@ -220,13 +220,13 @@ async def find_and_download(page):
                         download = await dl.value
                         path = os.path.join(DOWNLOAD_DIR, download.suggested_filename or "vpos_export.csv")
                         await download.save_as(path)
-                        print(f"      ✅ Descarga directa exitosa: {path}")
+                        print(f"      SUCCESS: Descarga directa exitosa: {path}")
                         return path
                     except:
                         pass
 
         except Exception as e:
-            print(f"      ⚠ Error con {sel}: {e}")
+            print(f"      WARN: Error con {sel}: {e}")
             continue
 
     # --- FALLBACK: Buscar links de exportación en el DOM ---
@@ -245,14 +245,14 @@ async def find_and_download(page):
                     download = await dl.value
                     path = os.path.join(DOWNLOAD_DIR, download.suggested_filename or "vpos_export.csv")
                     await download.save_as(path)
-                    print(f"      ✅ Descarga exitosa: {path}")
+                    print(f"      SUCCESS: Descarga exitosa: {path}")
                     return path
             except:
                 continue
     except:
         pass
 
-    print("      ❌ No se pudo completar ninguna descarga")
+    print("      ERROR: No se pudo completar ninguna descarga")
     await page.screenshot(path=os.path.join(DOWNLOAD_DIR, 'error_no_download.png'))
     return None
 
@@ -305,12 +305,12 @@ async def run(headless=False):
 
         try:
             if not await login(page):
-                print("\n❌ Fallo en login. Revisa credenciales en .env")
+                print("\nERROR: Fallo en login. Revisa credenciales en .env")
                 return None
 
             nav_ok = await navigate_to_transactions(page)
             if not nav_ok:
-                print("\n⚠ No se pudo navegar a Transacciones. Analizando página actual...")
+                print("\nWARN: No se pudo navegar a Transacciones. Analizando página actual...")
                 await analyze_page(page)
                 return None
 
@@ -320,7 +320,7 @@ async def run(headless=False):
                 await analyze_page(page)
 
         except Exception as e:
-            print(f"\n❌ ERROR GLOBAL: {e}")
+            print(f"\nERROR: ERROR GLOBAL: {e}")
             import traceback
             traceback.print_exc()
             try:
@@ -332,9 +332,9 @@ async def run(headless=False):
             await browser.close()
             print("\n" + "=" * 70)
             if result_path:
-                print(f"✅ RESULTADO: Archivo guardado en:\n   {result_path}")
+                print(f"SUCCESS: RESULTADO: Archivo guardado en:\n   {result_path}")
             else:
-                print("⚠ RESULTADO: No se descargó ningún archivo.")
+                print("WARN: RESULTADO: No se descargó ningún archivo.")
                 print(f"   Revisa los archivos de debug en: {DOWNLOAD_DIR}")
             print("=" * 70)
 

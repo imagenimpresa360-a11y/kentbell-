@@ -150,7 +150,7 @@ class ETLManager:
             self.status = "COMPLETED"
             end_time = datetime.now()
             duration = end_time - start_time
-            logger.info(f"✅ Full ETL Sync Completed in {duration.total_seconds():.2f}s")
+            logger.info(f"SUCCESS: Full ETL Sync Completed in {duration.total_seconds():.2f}s")
             
             self._log_sync_status("ETL_LAST_RUN", results, duration.total_seconds())
 

@@ -54,10 +54,10 @@ def process_lioren_sales(file_path):
         conn.commit()
         cur.close()
         conn.close()
-        print(f"✅ {count} ventas integradas desde Lioren.")
+        print(f"SUCCESS: {count} ventas integradas desde Lioren.")
         return True, count
     except Exception as e:
-        print(f"❌ Error Lioren: {e}")
+        print(f"ERROR: Error Lioren: {e}")
         return False, str(e)
 
 def process_lioren_purchases(file_path):
@@ -136,10 +136,10 @@ def process_lioren_purchases(file_path):
         conn.commit()
         cur.close()
         conn.close()
-        print(f"✅ {count} nuevas facturas de compra cargadas al libro de egresos.")
+        print(f"SUCCESS: {count} nuevas facturas de compra cargadas al libro de egresos.")
         return True, count
     except Exception as e:
-        print(f"❌ Error Compras: {e}")
+        print(f"ERROR: Compras: {e}")
         return False, str(e)
 
 if __name__ == "__main__":

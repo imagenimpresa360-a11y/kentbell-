@@ -151,7 +151,7 @@ def process_bm_dataframe(df, sede_hint="General"):
                     except ValueError:
                         continue
                 if not created_at or created_at.year < 2000:
-                    print(f"      ⚠ Fecha no reconocida: {date_str}")
+                    print(f"      WARN: Fecha no reconocida: {date_str}")
                     # If date invalid, we can't check period, so we might insert or fail.
                     # Default to fail? Or let DB handle it. Database 'created_at' is timestamp.
                 else:
@@ -202,23 +202,23 @@ def process_bm_dataframe(df, sede_hint="General"):
         return inserted, errors
 
     except Exception as e:
-        print(f"❌ Error DB BoxMagic: {e}")
+        print(f"ERROR: DB BoxMagic: {e}")
         return 0, 0
 
 def process_boxmagic():
     # Buscar todos los CSVs en la carpeta (Lógica original)
     files = [f for f in os.listdir(DOWNLOAD_OUTPUT_DIR) if f.endswith('.csv')]
     if not files:
-        print(f"❌ No se encontraron CSVs en {DOWNLOAD_OUTPUT_DIR}")
+        print(f"ERROR: No se encontraron CSVs en {DOWNLOAD_OUTPUT_DIR}")
         return
 
-    print(f"📂 Archivos encontrados: {files}")
+    print(f"FILE: Archivos encontrados: {files}")
 
     # Limpiar tabla UNA SOLA VEZ antes de cargar todo (Solo en modo automàtico)
     try:
         conn = psycopg2.connect(host=DB_HOST, database=DB_NAME, user=DB_USER, password=DB_PASS)
         cur = conn.cursor()
-        print("   ⚠ Truncando tabla raw_boxmagic para carga limpia...")
+        print("   WARNING: Truncando tabla raw_boxmagic para carga limpia...")
         cur.execute("TRUNCATE raw_boxmagic RESTART IDENTITY")
         conn.commit()
         cur.close()
@@ -244,9 +244,9 @@ def process_boxmagic():
         
         ins, err = process_bm_dataframe(df, sede_hint)
         total_inserted += ins
-        print(f"      ✓ Insertados: {ins} | Errores: {err}")
+        print(f"      OK: Insertados: {ins} | Errores: {err}")
 
-    print(f"\n✅ TOTAL IMPORTADO: {total_inserted} registros de {len(files)} archivos.")
+    print(f"\nSUCCESS: TOTAL IMPORTADO: {total_inserted} registros de {len(files)} archivos.")
 
 
 if __name__ == "__main__":

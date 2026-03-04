@@ -10,7 +10,7 @@ sys.path.append(os.getcwd())
 try:
     from etl_manager import ETLManager
 except ImportError:
-    print("❌ Error: No se pudo importar ETLManager. Asegúrate de correr este script en la raíz del proyecto.")
+    print("ERROR: Error: No se pudo importar ETLManager. Asegúrate de correr este script en la raíz del proyecto.")
     sys.exit(1)
 
 # Configurar logs para ejecución headless
@@ -40,7 +40,7 @@ def main():
     duration = endTime - startTime
     
     logger.info(f"Sincronización finalizada en {duration.total_seconds():.1f} segundos.")
-    logger.info(f"Estatus Global: {'✅ ÉXITO' if success else '❌ FALLO'}")
+    logger.info(f"Estatus Global: {'SUCCESS: ÉXITO' if success else 'ERROR: FALLO'}")
     
     logger.info("Detalle por módulo:")
     for mod, res in results.items():

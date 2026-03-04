@@ -104,13 +104,34 @@ def process_vpos_csv(csv_path: str) -> tuple[int, int]:
     Lee el CSV de VirtualPOS y lo inserta en raw_virtualpos.
     Devuelve (insertados, omitidos_por_duplicado).
     """
-    print(f"\n📂 Archivo: {os.path.basename(csv_path)}")
+    print(f"\nFILE: Archivo: {os.path.basename(csv_path)}")
 
     # Leer CSV (VirtualPOS usa coma como separador y comillas en los valores)
+    # Leer CSV y limpiar formato mal formado (VirtualPOS suele exportar con comillas envolventes por línea)
+    import csv
     with open(csv_path, "r", encoding="utf-8-sig", errors="ignore") as f:
-        raw = f.read()
-
-    df = pd.read_csv(io.StringIO(raw), sep=",", engine="python", dtype=str)
+        lines = f.readlines()
+    
+    cleaned_lines = []
+    for line in lines:
+        line = line.strip()
+        if not line: continue
+        
+        # Estrategia SAP-style: Si la línea entera está entre comillas y tiene dobles comillas adentro, es un 'wrapped row'
+        # Usamos csv.reader para 'desenvolver' una sola fila si detectamos el patrón
+        if line.startswith('"') and line.endswith('"') and '""' in line:
+            try:
+                # El lector de CSV por defecto maneja el desenvelopado de quotes si lo tratamos como una sola columna
+                reader = csv.reader([line])
+                unwrapped = next(reader)[0]
+                cleaned_lines.append(unwrapped)
+            except:
+                cleaned_lines.append(line)
+        else:
+            cleaned_lines.append(line)
+    
+    csv_data = "\n".join(cleaned_lines)
+    df = pd.read_csv(io.StringIO(csv_data), sep=",", quotechar='"', engine="python", dtype=str)
 
     # Normalizar nombres de columna
     df.columns = [c.lower().strip().replace('"', "").replace(" ", "_") for c in df.columns]
@@ -205,7 +226,7 @@ def process_vpos_csv(csv_path: str) -> tuple[int, int]:
                 skipped += 1
 
         except Exception as e_row:
-            print(f"   ⚠ Error fila {transaction_id}: {e_row}")
+            print(f"   WARN: Error fila {transaction_id}: {e_row}")
 
     conn.commit()
     cur.close()
@@ -234,7 +255,7 @@ def process_vpos_content(content: str) -> tuple:
         os.remove(tmp_path)
         return ins, skp
     except Exception as e:
-        print(f"❌ Error en process_vpos_content: {e}")
+        print(f"ERROR: en process_vpos_content: {e}")
         return 0, 0
 
 
@@ -244,24 +265,34 @@ def process_vpos_content(content: str) -> tuple:
 
 def run():
     print("=" * 60)
-    print("PROCESS VPOS CSV — ETL VirtualPOS → PostgreSQL")
+    print("PROCESS VPOS CSV - ETL VirtualPOS -> PostgreSQL")
     print("=" * 60)
 
-    csv_path = get_latest_vpos_csv()
-    if not csv_path:
-        print(f"\n❌ No se encontró ningún CSV en: {DOWNLOAD_DIR}")
-        print("   Ejecutá primero: python virtualpos_downloader_final.py")
+    # Procesar TODOS los archivos que sigan el patrón para asegurar carga completa
+    files = [
+        os.path.join(DOWNLOAD_DIR, f)
+        for f in os.listdir(DOWNLOAD_DIR)
+        if (f.lower().startswith("virtualpos-transacciones") and f.endswith(".csv"))
+        or (f.lower().startswith("virtualpos_summary") and f.endswith(".csv"))
+    ]
+    
+    if not files:
+        print(f"\nERROR: No se encontró ningún CSV en: {DOWNLOAD_DIR}")
         return
 
-    try:
-        ins, skp = process_vpos_csv(csv_path)
-        print(f"\n✅ ETL completado:")
-        print(f"   Insertados : {ins}")
-        print(f"   Duplicados : {skp}")
-    except Exception as e:
-        print(f"\n❌ Error: {e}")
-        import traceback
-        traceback.print_exc()
+    total_ins = 0
+    total_skp = 0
+    for csv_path in files:
+        try:
+            ins, skp = process_vpos_csv(csv_path)
+            total_ins += ins
+            total_skp += skp
+        except Exception as e:
+            print(f"   ERROR: procesando {csv_path}: {e}")
+
+    print(f"\nSUCCESS: ETL Global completado:")
+    print(f"   Total Insertados : {total_ins}")
+    print(f"   Total Duplicados : {total_skp}")
 
 
 if __name__ == "__main__":
