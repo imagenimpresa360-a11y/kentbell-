@@ -360,3 +360,48 @@ CREATE TABLE IF NOT EXISTS system_settings (
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- =============================================
+-- MODULE H: COACHES & REMUNERATIONS
+-- =============================================
+CREATE TABLE IF NOT EXISTS coaches (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    rut VARCHAR(20) UNIQUE,
+    base_rate NUMERIC(12, 2) DEFAULT 7000,
+    default_sede VARCHAR(50) DEFAULT 'General',
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS coach_remunerations (
+    id SERIAL PRIMARY KEY,
+    coach_id INTEGER REFERENCES coaches(id),
+    month INTEGER NOT NULL,
+    year INTEGER NOT NULL,
+    hours_worked NUMERIC(6, 2) DEFAULT 0,
+    hourly_rate NUMERIC(12, 2),
+    total_honorarios NUMERIC(12, 2),
+    status VARCHAR(20) DEFAULT 'PENDING',
+    sii_folio INTEGER,
+    sede VARCHAR(50),
+    expense_uuid UUID REFERENCES expense_ledger(uuid),
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(coach_id, month, year, sede)
+);
+
+-- =============================================
+-- MODULE I: ACCOUNTING PERIODS
+-- =============================================
+CREATE TABLE IF NOT EXISTS accounting_periods (
+    period_key VARCHAR(7) PRIMARY KEY,  -- Format: 'YYYY-MM'
+    status VARCHAR(20) DEFAULT 'OPEN',  -- 'OPEN', 'CLOSED'
+    closed_at TIMESTAMP,
+    closed_by VARCHAR(100),
+    total_income_marina DECIMAL(15,2) DEFAULT 0,
+    total_income_campanario DECIMAL(15,2) DEFAULT 0,
+    total_expense_marina DECIMAL(15,2) DEFAULT 0,
+    total_expense_campanario DECIMAL(15,2) DEFAULT 0,
+    final_margin DECIMAL(15,2) DEFAULT 0,
+    notes TEXT
+);
