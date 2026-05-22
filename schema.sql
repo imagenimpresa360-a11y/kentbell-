@@ -349,3 +349,14 @@ CREATE TABLE IF NOT EXISTS reconciliation_anomalies (
     
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- =============================================
+-- MODULE G: SYSTEM SETTINGS
+-- =============================================
+CREATE TABLE IF NOT EXISTS system_settings (
+    key VARCHAR(100) PRIMARY KEY,
+    value TEXT NOT NULL,
+    label VARCHAR(150),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
