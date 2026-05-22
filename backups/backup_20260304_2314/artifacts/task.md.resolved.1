@@ -1,0 +1,28 @@
+# Task: Pendientes ERP The Boos Box
+
+## 🚀 Próximos Pasos (Alta Prioridad)
+- [ ] **Integración MercadoPago**: Reemplazar VirtualPOS como pasarela de pagos principal (Solicitado 25-02).
+- [ ] **Migración PostgreSQL**: 
+    - [ ] Activar el uso de `psycopg2` en los bots de sincronización.
+    - [ ] Migrar datos de archivos planos (CSV/Excel) a tablas estructuradas.
+    - [ ] Implementar lógica de detección de duplicados en BD.
+- [ ] **Dashboard Financiero**: 
+    - [ ] Vista de Flujo de Caja (Ingresos vs Gastos).
+    - [ ] Reporte de Rentabilidad por Sede (Marina vs Campanario).
+
+## ⚙️ Automatización y Infraestructura
+- [ ] **Scheduling**: Configurar [run_daily_sync.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/run_daily_sync.py) en el Programador de Tareas de Windows.
+- [ ] **Validación de Hosting**: Pruebas finales de todos los módulos antes de migración definitiva desde Railway.
+- [ ] **Logs de Error**: Implementar capturas de pantalla automáticas para fallos en Lioren y BoxMagic (en curso).
+
+## 📊 Reportes y Contabilidad
+- [ ] **Reporte Alumnos Inactivos**: Extracción completa del periodo Ene-Dic 2025.
+- [ ] **Cuadratura Bancaria**: Automatizar el cruce de cartola BCI vs Gastos registrados.
+- [ ] **Cuentas Críticas**: Refinar visor de facturas pendientes de pago en el panel de control.
+
+## ✅ Recientemente Completado
+- [x] Unificación de Dashboard BoxMagic (Manual + Automático).
+- [x] Catch-up de datos Enero 2026 (BoxMagic, Lioren, VirtualPOS).
+- [x] Sistema de Notificaciones OT v4.0 (Privacidad de montos + PDFs).
+- [x] Mayor Contable estilo SAP con exportación PDF/Excel.
+

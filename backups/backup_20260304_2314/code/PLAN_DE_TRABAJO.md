@@ -38,12 +38,12 @@
 
 ## 🔄 EN PROGRESO
 
-### 5. Conector VirtualPOS - Descarga de Reportes
-**Prioridad:** ALTA
-**Estado:** En Progreso
-**Estimación:** 2-3 horas
+### 5. Conector VirtualPOS - Descarga de Reportes / MercadoPago
+**Prioridad:** SUSPENDIDA / REEMPLAZADA  
+**Estado:** Pausado (Se migrará a MercadoPago futuro)  
+**Estimación:** N/A
 
-**Nota:** Reanudado el 19-05-2026. Se decide mantener VirtualPOS debido a que Mercado Libre retiene el dinero demasiado tiempo, afectando el flujo de caja.
+**Nota:** El usuario indicó el 25-02-2026 que el uso de VirtualPOS queda descartado en favor de **Mercado Libre (MercadoPago)**. Este punto queda pendiente para después.
 
 ---
 
@@ -188,7 +188,7 @@
 - ✅ Análisis y Diseño: 100%
 - ✅ Configuración: 100%
 - ✅ BoxMagic: 100%
-- ⏳ VirtualPOS: En progreso (Reanudado)
+- ⏸️ VirtualPOS: Suspendido (cambio a MercadoPago)
 - ⏳ Integración BD: En proceso
 - ⏳ Automatización: 0%
 - ⏳ Dashboard: En Progreso (Foco Actual)
@@ -200,7 +200,7 @@
 1. **HOY:** Trabajar en el Dashboard Estadístico y Financiero Centralizado.
 2. **MAÑANA:** Ajustar pipeline con datos consolidados para KPIs.
 3. **Esta semana:** Finalizar el primer MVC del Dashboard con filtros y reportes de Flujo de Cajas.
-4. **Próxima semana:** Completar automatización de descarga de reportes de VirtualPOS.
+4. **Próxima semana:** Implementar conector paralelo a MercadoPago (Mercado Libre) si se da el inicio.
 
 ---
 

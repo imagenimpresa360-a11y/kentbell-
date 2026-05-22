@@ -1,0 +1,26 @@
+# Plan de Optimización de Scraping BoxMagic (Fase 1)
+
+Este plan implementa las recomendaciones iniciales de la consultoría para mejorar la velocidad y robustez de la extracción de datos de ambas sedes (Campanario y Marina).
+
+## Cambios Propuestos
+
+### Configuración
+#### [MODIFY] [.env](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/.env)
+- Agregar variables `BM_SEDE_CAMPANARIO` y `BM_SEDE_MARINA` con sus respectivos IDs internos de BoxMagic.
+- Definir la ruta para el archivo de estado de sesión `BM_SESSION_PATH`.
+
+### Automatización (process_bm_pagos.py)
+#### [MODIFY] [process_bm_pagos.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/process_bm_pagos.py)
+- **Session Persistence**: Implementar lógica para cargar `storage_state` al iniciar el navegador.
+- **Auto-Login**: Solo realizar el flujo de login si no hay una sesión válida o si la navegación inicial falla.
+- **Configuración Dinámica**: Reemplazar IDs hardcodeados por las nuevas variables de entorno.
+- **Estructura Modular**: Separar la lógica de autenticación de la de extracción para facilitar el mantenimiento.
+
+## Plan de Verificación
+
+### Pruebas Automatizadas
+- Ejecutar `process_bm_pagos.py` dos veces seguidas: la segunda ejecución debería ser significativamente más rápida al saltarse el login.
+- Verificar que las capturas de pantalla de depuración muestren el dashboard directamente en la segunda ejecución.
+
+### Manual Verification
+- Revisar los logs para confirmar que el cambio de sede (`choose_box`) sigue funcionando correctamente con las nuevas variables.

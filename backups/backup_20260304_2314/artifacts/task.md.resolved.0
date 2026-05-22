@@ -1,0 +1,19 @@
+# Task: Consolidation of Pending Work
+
+## Recently Completed (March 3rd) [x]
+- [x] **Unified BoxMagic Dashboard**: Combined manual (CSV) and automated data.
+- [x] **Jan 2026 Recovery**: Catch-up sync for VirtualPOS, Lioren, and BoxMagic.
+- [x] **SAP-Style Accounting**: General Ledger (Mayor Contable) with PDF/Excel export.
+- [x] **Smart SII Reconciliation**: Auto-detection of periods from CSV files.
+- [x] **OT Notifications v4.0**: Real-time emails with PDF attachments and privacy (no amounts).
+
+## Pending & In Progress [/]
+- [/] **PostgreSQL Integration**: Refining the schema and ensuring all bots use it consistently.
+- [ ] **Multi-Company Scalability**: Implementing the "Configuración Global" for handling multiple RUTs/Companies (started in Gertrudis context).
+- [ ] **MercadoPago Integration**: Future replacement for VirtualPOS as requested.
+- [ ] **Automation Scheduling**: Finalizing the Windows Task Scheduler setup for [run_daily_sync.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/run_daily_sync.py).
+
+## Suggestions for Next Steps
+1. **Database Migration**: Move from flat files/partial DB to full PostgreSQL for all entities.
+2. **Company Profiles**: Finalize the global configuration UI to allow switching companies seamlessly.
+3. **Monthly Close Workflow**: Create a specific "Closing" tool that checks for missing records across all sources.

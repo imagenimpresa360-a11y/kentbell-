@@ -1,0 +1,24 @@
+# Plan de Corrección Dashboard BoxMagic
+
+## Problemas Identificados
+1. **Error de Fecha**: La automatización no seleccionó Ene/Feb correctamente, bajando datos de Marzo 2026 (mes actual).
+2. **Falta de Transparencia**: El dashboard solo muestra agregados, no el detalle de transacciones.
+3. **Alerta de Desincronización**: La tabla `system_settings` no se actualiza tras el sync, mostrando alertas confusas.
+
+## Cambios Propuestos
+
+### Automatización (process_bm_pagos.py)
+#### [MODIFY] [process_bm_pagos.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/process_bm_pagos.py)
+- Corregir [set_date_range](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/process_bm_pagos.py#18-71) para asegurar selección de fechas vía JS robusto.
+- Añadir actualización de `last_sync_boxmagic` en `system_settings`.
+
+### Dashboard (app.py)
+#### [MODIFY] [app.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/app.py)
+- Añadir tabla de detalle de transacciones en la pestaña de BoxMagic.
+- Mostrar los últimos 50 registros para verificación rápida del usuario.
+
+## Plan de Verificación
+1. Eliminar registros de Marzo erróneos.
+2. Re-ejecutar sync de Ene y Feb 2026.
+3. Verificar visualización de tabla de detalle en `http://localhost:8501`.
+pon error.

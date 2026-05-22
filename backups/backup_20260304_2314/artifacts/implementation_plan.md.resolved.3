@@ -1,0 +1,27 @@
+# Plan de Corrección Dashboard BoxMagic
+
+## Problemas Identificados
+1. **Error de Fecha**: La automatización no seleccionó Ene/Feb correctamente, bajando datos de Marzo 2026 (mes actual).
+2. **Falta de Transparencia**: El dashboard solo muestra agregados, no el detalle de transacciones.
+3. **Alerta de Desincronización**: La tabla `system_settings` no se actualiza tras el sync, mostrando alertas confusas.
+
+## Cambios Propuestos
+
+### Automatización (process_bm_pagos.py)
+#### [MODIFY] [process_bm_pagos.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/process_bm_pagos.py)
+- **Verificación de Datos**: Implementar un bucle de reintento en [extract_pagos](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/process_bm_pagos.py#92-111) que verifique si la fecha del primer registro extraído coincide con el mes solicitado. Si no coincide, reintenta el filtro.
+- **Cambio de Sede Robusto**: Iterar sobre los dropdowns de navegación para encontrar el link de "Marina" de forma dinámica, en lugar de depender de un texto estático en el toggle.
+- **Rango de Fechas Robusto**: Seguir usando la API de `daterangepicker` vía `jQuery` pero con una espera mayor (15s) tras el click en "Filtrar".
+- **Timestamp**: Actualizar `last_sync_boxmagic` solo si la extracción es exitosa.
+
+### Dashboard (app.py)
+#### [MODIFY] [app.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/app.py)
+- Añadir tabla de detalle de transacciones en la pestaña de BoxMagic.
+- Mostrar los últimos 50 registros para verificación rápida del usuario.
+
+## Plan de Verificación
+1. **Limpieza**: Eliminar registros de Marzo remanentes.
+2. **Sync Marina**: Ejecutar específicamente para Marina y verificar que `raw_boxmagic_pagos` contenga registros con `sede = 'Marina'`.
+3. **Sync Ene/Feb**: Verificar que las fechas en la DB correspondan a 2026-01 y 2026-02.
+4. **Dashboard**: Confirmar visualización en `http://localhost:8501`.
+pon error.

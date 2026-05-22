@@ -1,0 +1,157 @@
+# ===== Python =====
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# ===== Credenciales y Secretos =====
+.env
+boxmagic_cookies.json
+bm_session.json
+
+# ===== Archivos de Debug/Temporales =====
+debug_*.png
+debug_*.html
+debug_*.json
+debug_*.py
+debug_*.txt
+tmp_*.py
+tmp_*.xlsx
+diagnose_*.py
+step_fail.png
+full_automation_error*.png
+error_page*.html
+page_text_failure.txt
+
+# ===== Screenshots y capturas de desarrollo =====
+after_auth_login.png
+after_auth_login_source.html
+box_list_debug.png
+box_selector_full.png
+box_selector_source.html
+out_box_full.png
+out_box_source.html
+dashboard_after_admin.png
+dashboard_loaded.png
+dashboard_source_full.html
+dashboard_cookie_access.html
+reports_pagos_inspect.png
+error_virtualpos_download.png
+vpos_links.txt
+
+# ===== Datos descargados (no versionables) =====
+downloads/
+*.csv
+*.xlsx
+
+# ===== Archivos HTML de inspección =====
+*_inspect.html
+*_source.html
+*_cookie*.html
+
+# ===== Dumps de desarrollo =====
+buttons_dump.txt
+inputs_dump.txt
+list_files.txt
+analysis_results.txt
+promotion_projection.txt
+
+# ===== Logs de ejecución =====
+run_log*.txt
+*.log
+
+# ===== Scripts de un solo uso / exploración =====
+explore_*.py
+inspect_*.py
+find_*.py
+dump_*.py
+capture_*.py
+check_*.py
+audit_*.py
+fix_*.py
+
+# ===== Scripts de descarga ad-hoc =====
+download_2025*.py
+download_and_consolidate*.py
+final_*_extract*.py
+final_download*.py
+final_dual*.py
+final_keyboard*.py
+persistent_session_download.py
+save_dashboard_live.py
+navigate_vpos_menu.py
+
+# ===== Scripts de login de prueba =====
+login_boxmagic_v*.py
+login_final_attempt.py
+
+# ===== Scripts de análisis ad-hoc =====
+analyze_*.py
+compare_offers.py
+download_vpos_transactions.py
+extract_inactive_users.py
+investigate_csv_download.py
+
+# ===== Scripts de generación de reportes puntuales =====
+generate_ranking_2025.py
+generate_report_projection*.py
+generar_excel_competencia.py
+proyeccion_consolidada.py
+proyeccion_ingresos.py
+export_recuperation_list.py
+project_promotion.py
+query_2025_planes.py
+read_historical_excel.py
+
+# ===== Scripts de migración ya ejecutados =====
+migrate_coaches.py
+migrate_db.py
+import_historical_expenses.py
+import_historical_sales.py
+import_january.py
+create_accounting_periods.py
+set_opening_balance.py
+setup_admin.py
+update_schema_sede.py
+update_schema_tax.py
+sync_categories.py
+apply_schema.py
+
+# ===== Scripts de debug de BoxMagic =====
+test_bm_login.py
+test_bm_reports.py
+get_box_list.py
+boxmagic_downloader_2024.py
+
+# ===== Scripts de VirtualPOS ad-hoc =====
+test_vpos_login.py
+vpos_diagnostic.py
+vpos_final_attempt.py
+vpos_navigate_transactions.py
+explore_vpos_dashboard.py
+vpos_email_fetcher.py
+
+# ===== Scripts de Gmail =====
+test_gmail_conn.py
+test_gmail_simple.py
+gmail_downloader.py
+
+# ===== Otros temporales =====
+app.py_snippet.py
+app_backup.py
+cleanup_sales_data.py
+list_pending.py
+debug_syntax.py
+sum_manual_files.py
+verify_stats.py
+
+# ===== OS =====
+Thumbs.db
+.DS_Store
+
+# ===== IDE =====
+.vscode/
+.idea/

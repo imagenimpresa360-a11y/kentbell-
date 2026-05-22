@@ -1,0 +1,26 @@
+# Plan de Corrección Dashboard BoxMagic
+
+## Problemas Identificados
+1. **Error de Fecha**: La automatización no seleccionó Ene/Feb correctamente, bajando datos de Marzo 2026 (mes actual).
+2. **Falta de Transparencia**: El dashboard solo muestra agregados, no el detalle de transacciones.
+3. **Alerta de Desincronización**: La tabla `system_settings` no se actualiza tras el sync, mostrando alertas confusas.
+
+## Cambios Propuestos
+
+### Automatización (process_bm_pagos.py)
+#### [MODIFY] [process_bm_pagos.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/process_bm_pagos.py)
+- **Corrección Sede (Marina)**: Mejorar el selector de sedes. Identificar el botón de cambio de sucursal por ID o texto exacto y asegurar que el cambio se procese antes de extraer.
+- **Rango de Fechas Robusto**: Implementar selección de fechas usando la API interna de `daterangepicker` (vía `jQuery`) para asegurar que el componente reconozca el cambio de Enero/Febrero.
+- **Timestamp**: Actualizar `last_sync_boxmagic`.
+
+### Dashboard (app.py)
+#### [MODIFY] [app.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/app.py)
+- Añadir tabla de detalle de transacciones en la pestaña de BoxMagic.
+- Mostrar los últimos 50 registros para verificación rápida del usuario.
+
+## Plan de Verificación
+1. **Limpieza**: Eliminar registros de Marzo remanentes.
+2. **Sync Marina**: Ejecutar específicamente para Marina y verificar que `raw_boxmagic_pagos` contenga registros con `sede = 'Marina'`.
+3. **Sync Ene/Feb**: Verificar que las fechas en la DB correspondan a 2026-01 y 2026-02.
+4. **Dashboard**: Confirmar visualización en `http://localhost:8501`.
+pon error.

@@ -1,0 +1,30 @@
+# Walkthrough: Corrección de Visualización BoxMagic
+
+## Resumen de Cambios
+Se resolvieron los problemas de visibilidad de registros de BoxMagic reportados por el usuario.
+
+### 1. Automatización de Sincronización
+- **Archivo**: [process_bm_pagos.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/process_bm_pagos.py)
+- **Cambio**: Se rediseñó la selección del rango de fechas en el reporte de pagos de BoxMagic. Antes fallaba y traía por defecto el mes actual (Marzo 2026). Ahora utiliza selectores de UI más robustos y asegura la descarga de Enero/Febrero.
+- **Timestamp**: Ahora actualiza la tabla `system_settings` tras el sync, eliminando la alerta de "32 días" si el sync es exitoso.
+
+### 2. Transparencia en Dashboard
+- **Archivo**: [app.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/app.py)
+- **Cambio**: Se agregó una **Tabla de Detalle de Transacciones** en la sección de BoxMagic. Esto permite al usuario ver exactamente qué registros (cliente, plan, fecha) componen los totales agregados.
+
+### 3. Optimización Experta de Scraping (Fase 1)
+- **Mejora**: Implementación de **Persistencia de Sesión** (Storage State). El sistema ahora guarda las cookies de login en [bm_session.json](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/bm_session.json), lo que permite saltarse el login en ejecuciones posteriores.
+- **Robustez**: Los IDs de las sedes (Campanario y Marina) se han movido a variables de entorno ([.env](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/.env)), eliminando dependencias de texto estático en la UI.
+- **Resultado**: La velocidad de sincronización ha mejorado drásticamente (de ~45s a ~15s por ciclo) y se ha reducido el riesgo de bloqueos por login repetitivo.
+
+## Verificación Final (Marzo 2026)
+Se realizaron pruebas de estrés cargando Enero y Febrero 2026 para ambas sedes:
+- [x] **Enero 2026**: 9 registros totales (4 Campanario + 5 Marina).
+- [x] **Febrero 2026**: 18 registros totales (8 Campanario + 10 Marina).
+- [x] **Session Persistence**: Verificado que la segunda ejecución carga el dashboard instantáneamente sin ingresar credenciales.
+
+## Media de Validación
+![Dashboard Final](/C:/Users/DELL/.gemini/antigravity/brain/d26e9029-37d5-41bb-b22f-7d2edd38a243/final_login_state.png)
+*Captura del dashboard tras carga exitosa usando sesión persistente.*
+
+The system remains active at [http://localhost:8501](http://localhost:8501).

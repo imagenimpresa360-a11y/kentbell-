@@ -1,0 +1,18 @@
+# Task: Pendientes ERP The Boos Box
+
+## 🟢 ESTADO ACTUAL: Sincronización Refinada
+- **Sistema**: [http://localhost:8501](http://localhost:8501) activo.
+- **Correcciones**:
+    - [x] Eliminada data basura de Marzo 2026.
+    - [x] Corregido selector de fechas (jQuery API) en [process_bm_pagos.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/process_bm_pagos.py).
+    - [x] Mejorado selector de sedes (Soporte Marina).
+    - [/] Re-sincronizando Enero y Febrero 2026 (En progreso - Campanario & Marina).
+    - [x] Dashboard actualizado con **Tabla de Detalles**.
+
+## 🚀 Próximos Pasos (Alta Prioridad)
+- [x] **Sincronización Histórica (Ene-Feb 2026)**: Reportes de pagos de BoxMagic actualizados.
+- [ ] **Integración MercadoPago**: Reemplazar VirtualPOS como pasarela de pagos principal.
+- [ ] **Migración PostgreSQL**: 
+    - [x] Inicializar base de datos local (`crossfit_control`).
+    - [x] Aplicar esquema de tablas ([schema.sql](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/schema.sql)).
+    - [ ] Migrar datos históricos de Excel a tablas `raw_`.

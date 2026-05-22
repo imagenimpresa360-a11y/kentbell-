@@ -1,0 +1,28 @@
+# Plan: Sync BoxMagic Pagos (Jan-Feb 2026)
+
+The goal is to update the payment records for BoxMagic for both Marina and Campanario locations for the months of January and February 2026.
+
+## Proposed Changes
+
+### Automation Execution
+No code changes are required as the existing [process_bm_pagos.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/process_bm_pagos.py) script is already designed to handle targeted month/year syncs and switch between branches.
+
+1.  **Sync January 2026**:
+    - Run `python process_bm_pagos.py --month 1 --year 2026`
+2.  **Sync February 2026**:
+    - Run `python process_bm_pagos.py --month 2 --year 2026`
+
+## Verification Plan
+
+### Automated Verification
+- Check the `raw_boxmagic_pagos` table in PostgreSQL to verify that the number of records for `fecha_pago` in Jan/Feb 2026 has increased or been updated.
+- **SQL Command**:
+  ```sql
+  SELECT sede, TO_CHAR(fecha_pago, 'YYYY-MM') as month, COUNT(*) 
+  FROM raw_boxmagic_pagos 
+  WHERE fecha_pago BETWEEN '2026-01-01' AND '2026-02-28'
+  GROUP BY sede, month;
+  ```
+
+### Manual Verification
+- Review the [error_pagos_sync.png](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/error_pagos_sync.png) file if the script fails, as it captures the screen state upon error.

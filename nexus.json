@@ -1,0 +1,37 @@
+{
+    "nexus_protocol": "1.0",
+    "project_name": "ERP The Boos Box",
+    "last_updated": "2026-05-20T01:10:00-04:00",
+    "public_report": {
+        "status": "activo",
+        "health_score": 100,
+        "summary": "Implementado el conector automatizado BCI Dropzone (Opción A). El vigilante de buzón local se encuentra activo y operando en segundo plano.",
+        "mission": "Optimizar la gestión administrativa de The Boos Box integrando BoxMagic para la automatización de la sincronización de miembros, la facturación eficiente y la ejecución de campañas de marketing.",
+        "purpose": "Este agente fue diseñado y programado de manera específica para actuar como el núcleo inteligente de automatización y control financiero del holding The Boos Box. Su propósito detallado abarca: 1) La extracción automatizada de transacciones y conciliaciones de múltiples pasarelas de pago (BoxMagic, VirtualPOS y futuros métodos). 2) La centralización de ingresos y egresos en una base de datos PostgreSQL local para auditoría. 3) El diseño y ejecución de un Dashboard Financiero Estadístico para el control de Flujo de Caja en tiempo real. 4) La optimización de campañas de marketing relacionales y de fidelización a partir de patrones detectados de miembros inactivos o activos.",
+        "blockers": [],
+        "achievements": [
+            "Actualización del reporte Nexus v1.0",
+            "Auditoría de Sistemas (Nivel SAP) y Roadmap de Integridad",
+            "Propuesta de Arquitectura Decoupled por Contratos JSON",
+            "Creación del archivo de respaldo de progreso del día 19/05/2026",
+            "Implementación del módulo BCI Dropzone con bci_watcher.py en segundo plano"
+        ]
+    },
+    "meta": {
+        "company": "The Boos Box",
+        "priority": 1,
+        "is_cloud": true
+    },
+    "_instructions_for_agent": {
+        "protocol": "NEXUS v1.0 - Protocolo de Cajas Negras",
+        "rules": [
+            "Antes de cerrar una sesión de trabajo, DEBES actualizar nexus.json con tu estado actual.",
+            "El campo 'summary' debe ser un resumen ejecutivo. NO incluir código ni tecnicismos.",
+            "El campo 'health_score' es un número de 0 a 100 que refleja tu evaluación del estado del proyecto.",
+            "El campo 'blockers' lista impedimentos que requieren atención del Holding.",
+            "El campo 'achievements' lista lo que se completó en la última sesión.",
+            "NUNCA modifiques campos dentro de 'meta' — esos los gestiona el Orquestador."
+        ],
+        "inbox_check": "Al iniciar sesión, revisa si existe un archivo en tu carpeta /inbox"
+    }
+}

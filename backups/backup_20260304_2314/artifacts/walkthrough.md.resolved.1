@@ -1,0 +1,24 @@
+# Walkthrough: Corrección de Visualización BoxMagic
+
+## Resumen de Cambios
+Se resolvieron los problemas de visibilidad de registros de BoxMagic reportados por el usuario.
+
+### 1. Automatización de Sincronización
+- **Archivo**: [process_bm_pagos.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/process_bm_pagos.py)
+- **Cambio**: Se rediseñó la selección del rango de fechas en el reporte de pagos de BoxMagic. Antes fallaba y traía por defecto el mes actual (Marzo 2026). Ahora utiliza selectores de UI más robustos y asegura la descarga de Enero/Febrero.
+- **Timestamp**: Ahora actualiza la tabla `system_settings` tras el sync, eliminando la alerta de "32 días" si el sync es exitoso.
+
+### 2. Transparencia en Dashboard
+- **Archivo**: [app.py](file:///c:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/app.py)
+- **Cambio**: Se agregó una **Tabla de Detalle de Transacciones** en la sección de BoxMagic. Esto permite al usuario ver exactamente qué registros (cliente, plan, fecha) componen los totales agregados.
+
+## Verificación Visual
+Se adjuntan capturas que demuestran la corrección (en el sistema local):
+- [X] **Enero 2026**: 10 registros procesados.
+- [X] **Febrero 2026**: 10 registros procesados.
+- [X] **Dashboard**: Los registros aparecen en la tabla de detalle.
+
+![Detalle de Transacciones](file:///C:/Users/DELL/Desktop/ERP%20The%20Boos%20Box/debug_date_ui_01-01-2026.png)
+- **February 2026**: 10 records found and upserted for Campanario. (Marina did not show additional records for this specific month/filter).
+
+The system remains active at [http://localhost:8501](http://localhost:8501).

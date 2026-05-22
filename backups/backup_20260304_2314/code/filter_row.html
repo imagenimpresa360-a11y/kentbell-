@@ -1,0 +1,751 @@
+
+
+				<!-- Contenido pr-lg-0-->
+				<div class="col-12">
+
+					<!-- Alertas -->
+					<section class="home-alerts">
+	<!-- Alertas y avisos -->
+	</section>
+
+<script>
+	$('[data-dismiss="alert"]').click(function(){
+		$('.bm-alert').removeClass('show');
+		$('.home-alerts').hide('fast');
+	})
+</script>
+										<section class="panel-header ">
+						<div class="row">
+									<div class="col-6">
+
+<!--breadcrumb-->
+	<nav class="breadcrumbs" role="navigation">
+		<a href="/reportes/categorias" class="text-hint"><span><svg viewBox="0 0 20 20" class="v3ASA" focusable="false" aria-hidden="true"><path d="M12 16a.997.997 0 0 1-.707-.293l-5-5a.999.999 0 0 1 0-1.414l5-5a.999.999 0 1 1 1.414 1.414L8.414 10l4.293 4.293A.999.999 0 0 1 12 16" fill-rule="evenodd"></path></svg></span><span class="ml-1">Volver a reportes</span></a>
+	</nav>
+	<h1 class="h1 mb-0"><span>Reporte de pagos </span></h1>
+</div>
+
+	<div class="col-6 text-right">
+			</div>
+															<!-- botones secundarios-->
+							<div class="col">
+								<div class="" aria-label="nav">
+											<a href="#!" id="exportar" class="btn white no-shadow border btn-sm mt-2"><i><svg style="width: 12px;" aria-hidden="true" focusable="false" data-prefix="fal" data-icon="arrow-to-bottom" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" class="svg-inline--fa fa-arrow-to-bottom fa-w-12 fa-3x"><path fill="currentColor" d="M348.5 264l-148 148.5c-4.7 4.7-12.3 4.7-17 0L35.5 264c-4.7-4.7-4.7-12.3 0-17l7.1-7.1c4.7-4.7 12.3-4.7 17 0l115.4 116V44c0-6.6 5.4-12 12-12h10c6.6 0 12 5.4 12 12v311.9L324.4 240c4.7-4.7 12.3-4.7 17 0l7.1 7.1c4.7 4.6 4.7 12.2 0 16.9zM384 468v-8c0-6.6-5.4-12-12-12H12c-6.6 0-12 5.4-12 12v8c0 6.6 5.4 12 12 12h360c6.6 0 12-5.4 12-12z" class=""></path></svg></i><span>Exportar</span></a>
+									</div>
+							</div>
+						</div>
+						<br>
+						<div class="row">
+							<div class="col">
+															</div>
+						</div>
+					</section>
+					
+					
+<!-- Datatable -->
+<link rel="stylesheet" href="/new-arg-panel/src/vendor/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="/new-arg-panel/src/vendor/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css">
+<link rel="stylesheet" href="/new-arg-panel/src/vendor/datatables.net-select-bs4/css/select.bootstrap4.min.css">
+
+<script src="/new-arg-panel/src/vendor/datatables.net/js/jquery.dataTables.min.js"></script>
+<script src="/new-arg-panel/src/vendor/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="/new-arg-panel/src/vendor/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
+<script src="/new-arg-panel/src/vendor/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js"></script>
+<script src="/new-arg-panel/src/vendor/datatables.net-buttons/js/buttons.html5.min.js"></script>
+<script src="/new-arg-panel/src/vendor/datatables.net-buttons/js/buttons.flash.min.js"></script>
+<script src="/new-arg-panel/src/vendor/datatables.net-buttons/js/buttons.print.min.js"></script>
+<script src="/new-arg-panel/src/vendor/datatables.net-select/js/dataTables.select.min.js"></script>
+<!-- End Datatable -->
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+
+	<div class="card">
+		<div class="card-header">
+		 <div class="d-flex text-right">
+			<h3 class="mr-auto my-auto">Filtros</h3>
+				
+                  <div class="form-group mb-0" style="padding-right:10px">
+                                        <div class="dropdown bootstrap-select show-tick form-control"><select class="form-control selectpicker" id="profesores" data-live-search="true" multiple="" data-container="body" data-style="no-shadow btn-block border" data-selected-text-format="count" title="Equipo" data-actions-box="true" tabindex="-98">
+                                                                  <option value="228452">Francisco Yañez</option>
+                                                                                        <option value="175418">Ruben Rojas</option>
+                                                                </select><button type="button" class="btn dropdown-toggle no-shadow btn-block border bs-placeholder" data-toggle="dropdown" role="button" data-id="profesores" title="Equipo"><div class="filter-option"><div class="filter-option-inner"><div class="filter-option-inner-inner">Equipo</div></div> </div></button><div class="dropdown-menu " role="combobox"><div class="bs-searchbox"><input type="text" class="form-control" autocomplete="off" role="textbox" aria-label="Search"></div><div class="bs-actionsbox"><div class="btn-group btn-group-sm btn-block"><button type="button" class="actions-btn bs-select-all btn btn-light">Seleccionar Todos</button><button type="button" class="actions-btn bs-deselect-all btn btn-light">Desmarcar Todos</button></div></div><div class="inner show" role="listbox" aria-expanded="false" tabindex="-1"><ul class="dropdown-menu inner show"></ul></div></div></div>
+                  </div>
+                
+			<div id="reportrange" class="btn btn-air-light text-primary">
+			 <i class="fa fa-calendar"></i>&nbsp;
+			 <span>01/03/2026 - 31/03/2026</span> <i class="fa fa-caret-down"></i>
+			 <input type="hidden" id="fecha_desde" value="2026-03-01">
+			 <input type="hidden" id="fecha_hasta" value="2026-03-31">
+			</div>
+			<a href="#!" class="btn btn-air-default" id="buscar">filtrar</a>
+					 </div>
+		</div>
+	 
+	 <div class="card-body">
+		<div class="row">
+		 		
+		<div class="nav-wrapper w-100 p-0">
+			<ul class="nav nav-pills nav-fill flex-column flex-md-row" id="tabs-icons-text" role="tablist">
+				<li class="nav-item">
+					<a class="nav-link mb-sm-3 mb-md-0 active" id="tabs-icons-text-1-tab" data-toggle="tab" href="#tabs-icons-text-1" role="tab" aria-controls="tabs-icons-text-1" aria-selected="true">Pagos Ingresados 16 <br> Total $611.700</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link mb-sm-3 mb-md-0" id="tabs-icons-text-2-tab" data-toggle="tab" href="#tabs-icons-text-2" role="tab" aria-controls="tabs-icons-text-2" aria-selected="false">
+							Clientes Nuevos ingresados: 3
+					</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link mb-sm-3 mb-md-0" id="tabs-icons-text-3-tab" data-toggle="tab" href="#tabs-icons-text-3" role="tab" aria-controls="tabs-icons-text-3" aria-selected="false">
+							Nuevas Membresías: 6
+					</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link mb-sm-3 mb-md-0" id="tabs-icons-text-4-tab" data-toggle="tab" href="#tabs-icons-text-4" role="tab" aria-controls="tabs-icons-text-4" aria-selected="false">
+							Nuevos clientes convertidos: 2
+					</a>
+				</li>
+		</ul>
+</div>
+
+<div class="table-responsive p-3">
+		<div class="">
+				<div class="tab-content" id="myTabContent">
+						<div class="tab-pane fade show active" id="tabs-icons-text-1" role="tabpanel" aria-labelledby="tabs-icons-text-1-tab">
+							<div class="">
+								<div id="pagosTable_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer"><div class="dt-buttons btn-group flex-wrap">       <button class="btn btn-secondary buttons-copy buttons-html5" tabindex="0" aria-controls="pagosTable" type="button"><span>Copy</span></button> <button class="btn btn-secondary buttons-csv buttons-html5" tabindex="0" aria-controls="pagosTable" type="button"><span>CSV</span></button> <button class="btn btn-secondary buttons-print" tabindex="0" aria-controls="pagosTable" type="button"><span>Print</span></button> </div><div id="pagosTable_filter" class="dataTables_filter"><label>Buscar<input type="search" class="form-control form-control-sm" placeholder="" aria-controls="pagosTable"></label></div><table class="table align-items-center p-1 dataTable no-footer" id="pagosTable" role="grid" aria-describedby="pagosTable_info">
+									<thead class="thead-light border-top-0">
+									 <tr role="row"><th class="sorting_asc" tabindex="0" aria-controls="pagosTable" rowspan="1" colspan="1" aria-sort="ascending" aria-label="
+										 	N°
+										: activate to sort column descending" style="width: 44.3125px;">
+										 	N°
+										</th><th class="sorting" tabindex="0" aria-controls="pagosTable" rowspan="1" colspan="1" aria-label="
+										 Cliente:										: activate to sort column ascending" style="width: 252.219px;">
+										 Cliente:										</th><th class="sorting" tabindex="0" aria-controls="pagosTable" rowspan="1" colspan="1" aria-label="
+										 Email:										: activate to sort column ascending" style="width: 236.625px;">
+										 Email:										</th><th class="sorting" tabindex="0" aria-controls="pagosTable" rowspan="1" colspan="1" aria-label="
+										 Estado:										: activate to sort column ascending" style="width: 46.75px;">
+										 Estado:										</th><th class="sorting" tabindex="0" aria-controls="pagosTable" rowspan="1" colspan="1" aria-label="
+										 Plan										: activate to sort column ascending" style="width: 250.281px;">
+										 Plan										</th><th class="sorting" tabindex="0" aria-controls="pagosTable" rowspan="1" colspan="1" aria-label="
+										 Fecha de pago										: activate to sort column ascending" style="width: 87.9688px;">
+										 Fecha de pago										</th><th class="sorting" tabindex="0" aria-controls="pagosTable" rowspan="1" colspan="1" aria-label="
+										 Fecha de Inicio										: activate to sort column ascending" style="width: 92.0781px;">
+										 Fecha de Inicio										</th><th class="sorting" tabindex="0" aria-controls="pagosTable" rowspan="1" colspan="1" aria-label="
+										 Tipo										: activate to sort column ascending" style="width: 73.5625px;">
+										 Tipo										</th><th class="sorting" tabindex="0" aria-controls="pagosTable" rowspan="1" colspan="1" aria-label="
+										 Monto										: activate to sort column ascending" style="width: 46.6719px;">
+										 Monto										</th><th class="sorting" tabindex="0" aria-controls="pagosTable" rowspan="1" colspan="1" aria-label="
+										 Vendedor/a										: activate to sort column ascending" style="width: 87.1562px;">
+										 Vendedor/a										</th></tr>
+									</thead>
+									<tbody>
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 												 
+									 
+									 									<tr role="row" class="odd">
+									 	<td class="sorting_1">107508</td>
+										<td>EDUARDO ANDRES SCHRAMM QUINTUMAN</td>
+										<td>EDUARDO.SCHRAMMQ@GMAIL.COM</td>
+																				<td>activo</td>
+										<td>FUNCIONAL /CF C 16 CLASES</td>
+										<td>02/03/2026</td>
+										<td>02/03/2026</td>
+										<td>webpay</td>
+										<td>$ 47900</td>
+										<td>Sin Información</td>
+																														 </tr><tr role="row" class="even">
+									 	<td class="sorting_1">283025</td>
+										<td>Ester soledad Coñuenao lefin</td>
+										<td>solelefin21@gmail.com</td>
+																				<td>activo</td>
+										<td>FUNCIONAL /CF C 4 CLASES</td>
+										<td>02/03/2026</td>
+										<td>02/03/2026</td>
+										<td>webpay</td>
+										<td>$ 27000</td>
+										<td>Sin Información</td>
+																														 </tr><tr role="row" class="odd">
+									 	<td class="sorting_1">283691</td>
+										<td>Tatiana Morales</td>
+										<td>tmorales02@gmail.com</td>
+																				<td>activo</td>
+										<td>FUNCIONAL /CF C 24 CLASES</td>
+										<td>02/03/2026</td>
+										<td>02/03/2026</td>
+										<td>webpay</td>
+										<td>$ 59900</td>
+										<td>Sin Información</td>
+																														 </tr><tr role="row" class="even">
+									 	<td class="sorting_1">347213</td>
+										<td>Catalina Acevedo</td>
+										<td>catalina.alejandra.acevedo.a@gmail.com</td>
+																				<td>activo</td>
+										<td>FUNCIONAL /CF C 12 CLASES</td>
+										<td>03/03/2026</td>
+										<td>03/03/2026</td>
+										<td>webpay</td>
+										<td>$ 42900</td>
+										<td>Sin Información</td>
+																														 </tr><tr role="row" class="odd">
+									 	<td class="sorting_1">408389</td>
+										<td>Elizabeth  Oyarzo</td>
+										<td>elizabeth.oyarzo1983@gmail.com</td>
+																				<td>activo</td>
+										<td>FUNCIONAL /CF C 16 CLASES</td>
+										<td>01/03/2026</td>
+										<td>01/03/2026</td>
+										<td>webpay</td>
+										<td>$ 47900</td>
+										<td>Sin Información</td>
+																														 </tr><tr role="row" class="even">
+									 	<td class="sorting_1">461997</td>
+										<td>Miguel Angel  Marín</td>
+										<td>miguelmarinarancibia@gmail.com</td>
+																				<td>activo</td>
+										<td>FUNCIONAL /CF C 12 CLASES</td>
+										<td>02/03/2026</td>
+										<td>02/03/2026</td>
+										<td>webpay</td>
+										<td>$ 42900</td>
+										<td>Sin Información</td>
+																														 </tr><tr role="row" class="odd">
+									 	<td class="sorting_1">473855</td>
+										<td>Katherine  Muñoz</td>
+										<td>k_tecita@live.cl</td>
+																				<td>activo</td>
+										<td>FUNCIONAL /CF C 12 CLASES</td>
+										<td>03/03/2026</td>
+										<td>03/03/2026</td>
+										<td>webpay</td>
+										<td>$ 42900</td>
+										<td>Sin Información</td>
+																														 </tr><tr role="row" class="even">
+									 	<td class="sorting_1">547301</td>
+										<td>Carla Sánchez </td>
+										<td>carlasv0110@gmail.com</td>
+																				<td>activo</td>
+										<td>FUNCIONAL /CF C 12 CLASES</td>
+										<td>01/03/2026</td>
+										<td>01/03/2026</td>
+										<td>webpay</td>
+										<td>$ 42900</td>
+										<td>Sin Información</td>
+																														 </tr><tr role="row" class="odd">
+									 	<td class="sorting_1">646335</td>
+										<td>Ursula González </td>
+										<td>ursulagonzalezmunoz@gmail.com</td>
+																				<td>activo</td>
+										<td>FUNCIONAL /CF C 12 CLASES</td>
+										<td>02/03/2026</td>
+										<td>02/03/2026</td>
+										<td>webpay</td>
+										<td>$ 42900</td>
+										<td>Sin Información</td>
+																														 </tr><tr role="row" class="even">
+									 	<td class="sorting_1">842225</td>
+										<td>Danitza Rocio</td>
+										<td>danitzarociosm@gmail.com</td>
+																				<td>activo</td>
+										<td>FUNCIONAL /CF C 12 CLASES</td>
+										<td>01/03/2026</td>
+										<td>01/03/2026</td>
+										<td>webpay</td>
+										<td>$ 42900</td>
+										<td>Sin Información</td>
+																														 </tr></tbody>
+							 </table><div class="dataTables_info" id="pagosTable_info" role="status" aria-live="polite">Showing 1 to 10 of 16 entries</div><div class="dataTables_paginate paging_full_numbers" id="pagosTable_paginate"><ul class="pagination"><li class="paginate_button page-item first disabled" id="pagosTable_first"><a href="#" aria-controls="pagosTable" data-dt-idx="0" tabindex="0" class="page-link">&lt;&lt;</a></li><li class="paginate_button page-item previous disabled" id="pagosTable_previous"><a href="#" aria-controls="pagosTable" data-dt-idx="1" tabindex="0" class="page-link">&lt;</a></li><li class="paginate_button page-item active"><a href="#" aria-controls="pagosTable" data-dt-idx="2" tabindex="0" class="page-link">1</a></li><li class="paginate_button page-item "><a href="#" aria-controls="pagosTable" data-dt-idx="3" tabindex="0" class="page-link">2</a></li><li class="paginate_button page-item next" id="pagosTable_next"><a href="#" aria-controls="pagosTable" data-dt-idx="4" tabindex="0" class="page-link">&gt;</a></li><li class="paginate_button page-item last" id="pagosTable_last"><a href="#" aria-controls="pagosTable" data-dt-idx="5" tabindex="0" class="page-link">&gt;&gt;</a></li></ul></div></div>
+							</div>
+						</div>
+						<div class="tab-pane fade" id="tabs-icons-text-2" role="tabpanel" aria-labelledby="tabs-icons-text-2-tab">
+							<div id="alumnosNuevosTable_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer"><div class="dt-buttons btn-group flex-wrap">       <button class="btn btn-secondary buttons-copy buttons-html5" tabindex="0" aria-controls="alumnosNuevosTable" type="button"><span>Copy</span></button> <button class="btn btn-secondary buttons-csv buttons-html5" tabindex="0" aria-controls="alumnosNuevosTable" type="button"><span>CSV</span></button> <button class="btn btn-secondary buttons-print" tabindex="0" aria-controls="alumnosNuevosTable" type="button"><span>Print</span></button> </div><div id="alumnosNuevosTable_filter" class="dataTables_filter"><label>Buscar<input type="search" class="form-control form-control-sm" placeholder="" aria-controls="alumnosNuevosTable"></label></div><table class="table align-items-center p-1 dataTable no-footer" id="alumnosNuevosTable" role="grid" aria-describedby="alumnosNuevosTable_info">
+									<thead class="thead-light border-top-0">
+									 <tr role="row"><th class="sorting_asc" tabindex="0" aria-controls="alumnosNuevosTable" rowspan="1" colspan="1" aria-sort="ascending" aria-label="
+										 	N°
+										: activate to sort column descending" style="width: 0px;">
+										 	N°
+										</th><th class="sorting" tabindex="0" aria-controls="alumnosNuevosTable" rowspan="1" colspan="1" aria-label="
+										 Cliente:										: activate to sort column ascending" style="width: 0px;">
+										 Cliente:										</th><th class="sorting" tabindex="0" aria-controls="alumnosNuevosTable" rowspan="1" colspan="1" aria-label="
+										 Email:										: activate to sort column ascending" style="width: 0px;">
+										 Email:										</th><th class="sorting" tabindex="0" aria-controls="alumnosNuevosTable" rowspan="1" colspan="1" aria-label="
+										 Estado:										: activate to sort column ascending" style="width: 0px;">
+										 Estado:										</th><th class="sorting" tabindex="0" aria-controls="alumnosNuevosTable" rowspan="1" colspan="1" aria-label="
+										 Fecha creación:										: activate to sort column ascending" style="width: 0px;">
+										 Fecha creación:										</th></tr>
+									</thead>
+									<tbody>
+									 									 
+									 									 
+									 									 
+									 									<tr role="row" class="odd">
+									 	<td class="sorting_1">1053163</td>
+										<td>Marta  Venegas</td>
+										<td>venegasallendem@gmail.com</td>
+										<td>activo</td>
+										<td>01/03/2026</td>
+									 </tr><tr role="row" class="even">
+									 	<td class="sorting_1">1053901</td>
+										<td>Camila  Carrizo Farias</td>
+										<td>carrizocamila466@gmail.com</td>
+										<td>prueba</td>
+										<td>02/03/2026</td>
+									 </tr><tr role="row" class="odd">
+									 	<td class="sorting_1">1055661</td>
+										<td>Ignacio Negrete</td>
+										<td>Ignacionegrete50@gmail.com</td>
+										<td>activo</td>
+										<td>03/03/2026</td>
+									 </tr></tbody>
+							</table><div class="dataTables_info" id="alumnosNuevosTable_info" role="status" aria-live="polite">Showing 1 to 3 of 3 entries</div><div class="dataTables_paginate paging_full_numbers" id="alumnosNuevosTable_paginate"><ul class="pagination"><li class="paginate_button page-item first disabled" id="alumnosNuevosTable_first"><a href="#" aria-controls="alumnosNuevosTable" data-dt-idx="0" tabindex="0" class="page-link">&lt;&lt;</a></li><li class="paginate_button page-item previous disabled" id="alumnosNuevosTable_previous"><a href="#" aria-controls="alumnosNuevosTable" data-dt-idx="1" tabindex="0" class="page-link">&lt;</a></li><li class="paginate_button page-item active"><a href="#" aria-controls="alumnosNuevosTable" data-dt-idx="2" tabindex="0" class="page-link">1</a></li><li class="paginate_button page-item next disabled" id="alumnosNuevosTable_next"><a href="#" aria-controls="alumnosNuevosTable" data-dt-idx="3" tabindex="0" class="page-link">&gt;</a></li><li class="paginate_button page-item last disabled" id="alumnosNuevosTable_last"><a href="#" aria-controls="alumnosNuevosTable" data-dt-idx="4" tabindex="0" class="page-link">&gt;&gt;</a></li></ul></div></div>
+						</div>
+						<div class="tab-pane fade" id="tabs-icons-text-3" role="tabpanel" aria-labelledby="tabs-icons-text-3-tab">
+								<div id="nuevasMembresiasTable_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer"><div class="dt-buttons btn-group flex-wrap">       <button class="btn btn-secondary buttons-copy buttons-html5" tabindex="0" aria-controls="nuevasMembresiasTable" type="button"><span>Copy</span></button> <button class="btn btn-secondary buttons-csv buttons-html5" tabindex="0" aria-controls="nuevasMembresiasTable" type="button"><span>CSV</span></button> <button class="btn btn-secondary buttons-print" tabindex="0" aria-controls="nuevasMembresiasTable" type="button"><span>Print</span></button> </div><div id="nuevasMembresiasTable_filter" class="dataTables_filter"><label>Buscar<input type="search" class="form-control form-control-sm" placeholder="" aria-controls="nuevasMembresiasTable"></label></div><table class="table align-items-center p-1 dataTable no-footer" id="nuevasMembresiasTable" role="grid" aria-describedby="nuevasMembresiasTable_info">
+									<thead class="thead-light border-top-0">
+									 <tr role="row"><th class="sorting_asc" tabindex="0" aria-controls="nuevasMembresiasTable" rowspan="1" colspan="1" aria-sort="ascending" aria-label="
+										 	N°
+										: activate to sort column descending" style="width: 0px;">
+										 	N°
+										</th><th class="sorting" tabindex="0" aria-controls="nuevasMembresiasTable" rowspan="1" colspan="1" aria-label="
+										 Nombre										: activate to sort column ascending" style="width: 0px;">
+										 Nombre										</th><th class="sorting" tabindex="0" aria-controls="nuevasMembresiasTable" rowspan="1" colspan="1" aria-label="
+										 Apellido										: activate to sort column ascending" style="width: 0px;">
+										 Apellido										</th><th class="sorting" tabindex="0" aria-controls="nuevasMembresiasTable" rowspan="1" colspan="1" aria-label="
+										 Email:										: activate to sort column ascending" style="width: 0px;">
+										 Email:										</th><th class="sorting" tabindex="0" aria-controls="nuevasMembresiasTable" rowspan="1" colspan="1" aria-label="
+										 Plan										: activate to sort column ascending" style="width: 0px;">
+										 Plan										</th><th class="sorting" tabindex="0" aria-controls="nuevasMembresiasTable" rowspan="1" colspan="1" aria-label="
+										 Monto										: activate to sort column ascending" style="width: 0px;">
+										 Monto										</th></tr>
+									</thead>
+									<tbody>
+									 									 
+									 									 
+									 									 
+									 									 
+									 									 
+									 									 
+									 									<tr role="row" class="odd">
+									 <td class="sorting_1">934231</td>
+										<td>Ximena </td>
+										<td>Pérez </td>
+										<td>1</td>
+																				<td>FUNCIONAL / CF C 8 CLASES</td>
+										<td>$ 37900</td>
+																													 </tr><tr role="row" class="even">
+									 <td class="sorting_1">1001209</td>
+										<td>ezequiel</td>
+										<td>vasquez</td>
+										<td>1</td>
+																				<td>FUNCIONAL /CF C 16 CLASES</td>
+										<td>$ 47900</td>
+																													 </tr><tr role="row" class="odd">
+									 <td class="sorting_1">1019854</td>
+										<td>Catalina</td>
+										<td>Reyes</td>
+										<td>1</td>
+																				<td>ESTUDIANTE FUNCIONAL / CF C 12 CLASES</td>
+										<td>$ 37900</td>
+																													 </tr><tr role="row" class="even">
+									 <td class="sorting_1">1051825</td>
+										<td>Fernando Daniel </td>
+										<td>Castro Bonamaison </td>
+										<td>1</td>
+																				<td>FUNCIONAL /CF C 12 CLASES</td>
+										<td>$ 42900</td>
+																													 </tr><tr role="row" class="odd">
+									 <td class="sorting_1">1053163</td>
+										<td>Marta </td>
+										<td>Venegas</td>
+										<td>1</td>
+																				<td>FUNCIONAL / CF C 8 CLASES</td>
+										<td>$ 37900</td>
+																													 </tr><tr role="row" class="even">
+									 <td class="sorting_1">1055661</td>
+										<td>Ignacio</td>
+										<td>Negrete</td>
+										<td>1</td>
+																				<td>FUNCIONAL /CF C 12 CLASES</td>
+										<td>$ 42900</td>
+																													 </tr></tbody>
+								 </table><div class="dataTables_info" id="nuevasMembresiasTable_info" role="status" aria-live="polite">Showing 1 to 6 of 6 entries</div><div class="dataTables_paginate paging_full_numbers" id="nuevasMembresiasTable_paginate"><ul class="pagination"><li class="paginate_button page-item first disabled" id="nuevasMembresiasTable_first"><a href="#" aria-controls="nuevasMembresiasTable" data-dt-idx="0" tabindex="0" class="page-link">&lt;&lt;</a></li><li class="paginate_button page-item previous disabled" id="nuevasMembresiasTable_previous"><a href="#" aria-controls="nuevasMembresiasTable" data-dt-idx="1" tabindex="0" class="page-link">&lt;</a></li><li class="paginate_button page-item active"><a href="#" aria-controls="nuevasMembresiasTable" data-dt-idx="2" tabindex="0" class="page-link">1</a></li><li class="paginate_button page-item next disabled" id="nuevasMembresiasTable_next"><a href="#" aria-controls="nuevasMembresiasTable" data-dt-idx="3" tabindex="0" class="page-link">&gt;</a></li><li class="paginate_button page-item last disabled" id="nuevasMembresiasTable_last"><a href="#" aria-controls="nuevasMembresiasTable" data-dt-idx="4" tabindex="0" class="page-link">&gt;&gt;</a></li></ul></div></div>
+						</div>
+						<div class="tab-pane fade" id="tabs-icons-text-4" role="tabpanel" aria-labelledby="tabs-icons-text-4-tab">
+								<div id="nuevosAlumnosMembresiasTable_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer"><div class="dt-buttons btn-group flex-wrap">       <button class="btn btn-secondary buttons-copy buttons-html5" tabindex="0" aria-controls="nuevosAlumnosMembresiasTable" type="button"><span>Copy</span></button> <button class="btn btn-secondary buttons-csv buttons-html5" tabindex="0" aria-controls="nuevosAlumnosMembresiasTable" type="button"><span>CSV</span></button> <button class="btn btn-secondary buttons-print" tabindex="0" aria-controls="nuevosAlumnosMembresiasTable" type="button"><span>Print</span></button> </div><div id="nuevosAlumnosMembresiasTable_filter" class="dataTables_filter"><label>Buscar<input type="search" class="form-control form-control-sm" placeholder="" aria-controls="nuevosAlumnosMembresiasTable"></label></div><table class="table align-items-center p-1 dataTable no-footer" id="nuevosAlumnosMembresiasTable" role="grid" aria-describedby="nuevosAlumnosMembresiasTable_info">
+									<thead class="thead-light border-top-0">
+									 <tr role="row"><th class="sorting_asc" tabindex="0" aria-controls="nuevosAlumnosMembresiasTable" rowspan="1" colspan="1" aria-sort="ascending" aria-label="
+										 	N°
+										: activate to sort column descending" style="width: 0px;">
+										 	N°
+										</th><th class="sorting" tabindex="0" aria-controls="nuevosAlumnosMembresiasTable" rowspan="1" colspan="1" aria-label="
+										 Nombre										: activate to sort column ascending" style="width: 0px;">
+										 Nombre										</th><th class="sorting" tabindex="0" aria-controls="nuevosAlumnosMembresiasTable" rowspan="1" colspan="1" aria-label="
+										 Apellido										: activate to sort column ascending" style="width: 0px;">
+										 Apellido										</th><th class="sorting" tabindex="0" aria-controls="nuevosAlumnosMembresiasTable" rowspan="1" colspan="1" aria-label="
+										 Email:										: activate to sort column ascending" style="width: 0px;">
+										 Email:										</th><th class="sorting" tabindex="0" aria-controls="nuevosAlumnosMembresiasTable" rowspan="1" colspan="1" aria-label="
+										 Plan										: activate to sort column ascending" style="width: 0px;">
+										 Plan										</th><th class="sorting" tabindex="0" aria-controls="nuevosAlumnosMembresiasTable" rowspan="1" colspan="1" aria-label="
+										 Monto										: activate to sort column ascending" style="width: 0px;">
+										 Monto										</th></tr>
+									</thead>
+									<tbody>
+									 									 
+									 									 
+									 									<tr role="row" class="odd">
+									 	<td class="sorting_1">20062</td>
+										<td>Marta </td>
+										<td>Venegas</td>
+										<td>venegasallendem@gmail.com</td>
+										<td>FUNCIONAL / CF C 8 CLASES</td>
+										<td>$ 37900</td>
+									 </tr><tr role="row" class="even">
+									 	<td class="sorting_1">20063</td>
+										<td>Ignacio</td>
+										<td>Negrete</td>
+										<td>Ignacionegrete50@gmail.com</td>
+										<td>FUNCIONAL /CF C 12 CLASES</td>
+										<td>$ 42900</td>
+									 </tr></tbody>
+								</table><div class="dataTables_info" id="nuevosAlumnosMembresiasTable_info" role="status" aria-live="polite">Showing 1 to 2 of 2 entries</div><div class="dataTables_paginate paging_full_numbers" id="nuevosAlumnosMembresiasTable_paginate"><ul class="pagination"><li class="paginate_button page-item first disabled" id="nuevosAlumnosMembresiasTable_first"><a href="#" aria-controls="nuevosAlumnosMembresiasTable" data-dt-idx="0" tabindex="0" class="page-link">&lt;&lt;</a></li><li class="paginate_button page-item previous disabled" id="nuevosAlumnosMembresiasTable_previous"><a href="#" aria-controls="nuevosAlumnosMembresiasTable" data-dt-idx="1" tabindex="0" class="page-link">&lt;</a></li><li class="paginate_button page-item active"><a href="#" aria-controls="nuevosAlumnosMembresiasTable" data-dt-idx="2" tabindex="0" class="page-link">1</a></li><li class="paginate_button page-item next disabled" id="nuevosAlumnosMembresiasTable_next"><a href="#" aria-controls="nuevosAlumnosMembresiasTable" data-dt-idx="3" tabindex="0" class="page-link">&gt;</a></li><li class="paginate_button page-item last disabled" id="nuevosAlumnosMembresiasTable_last"><a href="#" aria-controls="nuevosAlumnosMembresiasTable" data-dt-idx="4" tabindex="0" class="page-link">&gt;&gt;</a></li></ul></div></div>
+						</div>
+				</div>
+		</div>
+</div>
+		 </div>
+		</div>
+	 </div>
+
+ <div class="row pb-5">
+	<div class="col-12 col-md-6">
+	 	<div class="card mb-0 my-3">
+		<div class="card-header d-flex justify-content-center p-3">
+		 <div class="col p-0">
+			<h5 class="h3 mb-0">Fechas de ingresos de pagos</h5>
+		 </div>
+		</div>
+
+		<!-- Card body -->
+		<div class="card-body" style="height:350px;">
+			<div class="chart">
+			 <div class="chartjs-size-monitor">
+				<div class="chartjs-size-monitor-expand">
+				 <div class=""></div>
+				</div>
+				<div class="chartjs-size-monitor-shrink">
+				 <div class=""></div>
+				</div>
+			 </div>
+				<!-- Chart wrapper -->
+				<!-- style="position: relative; height:30vh; width:100%" -->
+				<div class="chart chart-container">
+			<div id="chart-bars-student-status-loading" class="loader-background">
+			 <div class="loader"></div>
+		 </div>
+					 <div style="height:300px;"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+						 <canvas class="ct-chart chartjs-render-monitor" id="bar-chart-fechas" width="464" height="300" style="display: block; width: 464px; height: 300px;"></canvas>
+					 </div>
+				</div>
+			</div>
+		</div>
+	 </div>
+	</div>
+	<div class="col-12 col-md-6">
+	 <div class="card mb-0 my-3">
+		<div class="card-header d-flex justify-content-center p-3">
+		 <div class="col p-0">
+			<h5 class="h3 mb-0">Tipos de pagos ingresados</h5>
+		 </div>
+		</div>
+		<!-- Card body -->
+		<div class="card-body" style="height:350px;">
+			<div class="chart">
+			 <div class="chartjs-size-monitor">
+				<div class="chartjs-size-monitor-expand">
+				 <div class=""></div>
+				</div>
+				<div class="chartjs-size-monitor-shrink">
+				 <div class=""></div>
+				</div>
+			 </div>
+				<!-- Chart wrapper -->
+				<!-- style="position: relative; height:30vh; width:100%" -->
+				<div class="chart chart-container">
+			<div id="chart-bars-student-status-loading" class="loader-background">
+			 <div class="loader"></div>
+		 </div>
+					<div style="height:300px;"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+						<canvas class="ct-chart chartjs-render-monitor" id="donut-chart-tipos" width="464" height="300" style="display: block; width: 464px; height: 300px;"></canvas>
+					</div>
+				</div>
+			</div>
+		</div>
+	 </div>
+	</div>
+ </div>
+
+ <script>
+ $(function() {
+	 var start = moment('2026-03-01');
+	 var end = moment('2026-03-31');
+
+	 function cb(start, end) {
+		 console.log(start);
+		 console.log(end);
+		 $('#reportrange span').html(start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY'));
+		 $('#fecha_desde').val(start.format('YYYY-MM-DD'));
+		 $('#fecha_hasta').val(end.format('YYYY-MM-DD'));
+	 }
+	 $('#reportrange').daterangepicker({
+		 "alwaysShowCalendars": true,
+		 "showDropdowns": true,
+		 "autoApply": true,
+		 startDate: start,
+		 endDate: end,
+		 ranges: {
+			 'Hoy': [moment(), moment()],
+			 'Ayer': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+			 'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+			 'Últimos 7 días': [moment().subtract(29, 'days'), moment()],
+			 'Este mes': [moment().startOf('month'), moment().endOf('month')],
+			 'Mes pasado': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+		 },
+		 "locale": {
+			 "format": "DD/MM/YYYY",
+			 "separator": " - ",
+			 "fromLabel": "Desde",
+			 "toLabel": "Hasta",
+			 "customRangeLabel": "Personalizado",
+			 "weekLabel": "W",
+			 "daysOfWeek": [
+				 "do",
+				 "lu",
+				 "ma",
+				 "mi",
+				 "ju",
+				 "Vi",
+				 "sa"
+			 ],
+			 "monthNames": [
+				 "enero",
+				 "febrero",
+				 "marzo",
+				 "Abril",
+				 "mayo",
+				 "junio",
+				 "julio",
+				 "Agosto",
+				 "septiembre",
+				 "octubre",
+				 "noviembre",
+				 "diciembre"
+			 ],
+			 "firstDay": 1
+		 },
+	 }, cb);
+
+	 cb(start, end);
+
+	 // inicio graficos:
+
+	 var ctx = document.getElementById("bar-chart-fechas").getContext("2d");
+	 window.myBar = new Chart(ctx, {
+		 type: 'bar',
+		 data: {
+			 labels: [
+				 				 "02/03",
+				 				 "03/03",
+				 				 "01/03",
+				 			 ],
+			 datasets: [{
+				 label: 'Pagos',
+				 backgroundColor: '#8E24AA',
+				 borderWidth: 1,
+				 data: [
+					 					 "311400",
+					 					 "166600",
+					 					 "133700",
+					 				 ]
+			 }]
+		 },
+		 options: {
+			 maintainAspectRatio: false,
+			 responsive: true,
+			 legend: {
+				 position: 'top',
+			 },
+			 title: {
+				 display: true,
+				 text: 'Pagos por fecha'
+			 }
+		 }
+	 });
+
+	 var ctx = document.getElementById("donut-chart-tipos").getContext("2d");
+	 var myDoughnutChart = new Chart(ctx, {
+		 type: 'doughnut',
+		 data: {
+			 datasets: [{
+				 data: [
+					 					 "530900",
+					 					 "37900",
+					 					 "42900",
+					 				 ],
+				 backgroundColor: [
+					 					 '#' + Math.floor(Math.random() * 16777215).toString(16),
+					 					 '#' + Math.floor(Math.random() * 16777215).toString(16),
+					 					 '#' + Math.floor(Math.random() * 16777215).toString(16),
+					 				 ]
+			 }],
+			 labels: [
+				 				 "webpay",
+				 				 "efectivo",
+				 				 "transferencia",
+				 			 ]
+		 },
+		 options: {
+			 maintainAspectRatio: false
+		 }
+	 });
+	 // fin graficos
+
+	 $('#pagosTable').DataTable({
+				dom: 'Bfrtip',
+				buttons: [
+						'copy', 'csv', 'excel', 'pdf', 'print'
+				],
+				pagingType: "full_numbers",
+				language: {
+					search: "Buscar",
+					paginate: {
+						first:      "<<",
+						previous:   "<",
+						next:       ">",
+						last:       ">>"
+					}
+				},
+		});
+	 $('#alumnosNuevosTable').DataTable({
+				dom: 'Bfrtip',
+				buttons: [
+						'copy', 'csv', 'excel', 'pdf', 'print'
+				],
+				pagingType: "full_numbers",
+				language: {
+					search: "Buscar",
+					paginate: {
+						first:      "<<",
+						previous:   "<",
+						next:       ">",
+						last:       ">>"
+					}
+				},
+		});
+	 $('#nuevasMembresiasTable').DataTable({
+				dom: 'Bfrtip',
+				buttons: [
+						'copy', 'csv', 'excel', 'pdf', 'print'
+				],
+				pagingType: "full_numbers",
+				language: {
+					search: "Buscar",
+					paginate: {
+						first:      "<<",
+						previous:   "<",
+						next:       ">",
+						last:       ">>"
+					}
+				},
+		});
+	 $('#nuevosAlumnosMembresiasTable').DataTable({
+				dom: 'Bfrtip',
+				buttons: [
+						'copy', 'csv', 'excel', 'pdf', 'print'
+				],
+				pagingType: "full_numbers",
+				language: {
+					search: "Buscar",
+					paginate: {
+						first:      "<<",
+						previous:   "<",
+						next:       ">",
+						last:       ">>"
+					}
+				},
+		});
+	 
+	 $('#buscar').click(function() {
+		Swal.fire({
+                title: 'Espere por favor',
+                html: '',
+            });
+        Swal.showLoading();
+		 var activos = $('#activos').val();
+		 var fecha_desde = $('#fecha_desde').val();
+		 var fecha_hasta = $('#fecha_hasta').val();
+		 var method = 'pagos';
+		 window.location.href = "https://boxmagic.cl/reportes/reportes_pagos?fecha_desde=" + fecha_desde + "&fecha_hasta=" + fecha_hasta + "&activos=" + activos + "&coach_selected=" + $('#profesores').val() + "&method=" + method;
+	 });
+	 $('#borrados').click(function() {
+		Swal.fire({
+                title: 'Espere por favor',
+                html: '',
+            });
+        Swal.showLoading();
+		 var activos = $('#activos').val();
+		 var fecha_desde = $('#fecha_desde').val();
+		 var fecha_hasta = $('#fecha_hasta').val();
+		 var method = 'borrados';
+		 console.log(method);
+		 window.location.href = "https://boxmagic.cl/reportes/reportes_pagos?fecha_desde=" + fecha_desde + "&fecha_hasta=" + fecha_hasta + "&activos=" + activos + "&coach_selected=" + $('#profesores').val() + "&method=" + method;
+	 });
+	 $('#exportar').click(function() {
+		Swal.fire({
+                title: 'Espere por favor',
+                html: '',
+            });
+        Swal.showLoading();
+		 //var date = $('#datepicker').val();
+		 var activos = $('#activos').val();
+		 //var date_array = date.split("-");
+		 //var mes = date_array[0];
+		 //var ano = date_array[1];
+		 var fecha_desde = $('#fecha_desde').val();
+		 var fecha_hasta = $('#fecha_hasta').val();
+		 window.location.href = "https://boxmagic.cl/reportes/reportes_pagos?fecha_desde=" + fecha_desde + "&fecha_hasta=" + fecha_hasta + "&exporta=" + 1 + "&activos=" + activos + "&coach_selected=" + $('#profesores').val();
+	 });
+ });
+</script>
+ 
+				</div>
+			

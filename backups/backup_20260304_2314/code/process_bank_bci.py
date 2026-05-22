@@ -20,19 +20,19 @@ def process_bci_statement(file_path):
     """
     try:
         print(f"Leyendo archivo: {file_path}")
-        # Intentamos leer las primeras filas para encontrar el encabezado (BCI puede tenerlo hasta la fila 22)
-        df_raw = pd.read_excel(file_path, header=None, nrows=45)
+        # Intentamos leer las primeras filas para encontrar el encabezado
+        df_raw = pd.read_excel(file_path, header=None, nrows=20)
         
-        # Buscar la fila que tiene "Fecha" y "Descripción" (o "Glosa")
+        # Buscar la fila que tiene "Fecha" y "Descripción"
         header_row_idx = None
         for idx, row in df_raw.iterrows():
-            row_str = [str(val).lower() if pd.notna(val) else "" for val in row]
-            if any("fecha" in s for s in row_str) and (any("descrip" in s for s in row_str) or any("glosa" in s for s in row_str)):
+            row_str = row.astype(str).str.lower().tolist()
+            if any("fecha" in s for s in row_str) and any("descripción" in s or "descripcion" in s for s in row_str):
                 header_row_idx = idx
                 break
         
         if header_row_idx is None:
-            raise ValueError("No se encontro la fila de encabezados (Fecha, Descripcion, Glosa, etc.) en las primeras 45 filas.")
+            raise ValueError("No se encontró la fila de encabezados (Fecha, Descripción, etc.) en las primeras 20 filas.")
             
         # Re-leer con el header correcto
         df = pd.read_excel(file_path, header=header_row_idx)
@@ -40,18 +40,16 @@ def process_bci_statement(file_path):
         # Normalizar columnas
         df.columns = [str(c).strip() for c in df.columns]
         
-        # Mapeo de columnas flexible (insensible a mayusculas, minusculas y acentos)
-        columns_lower = {str(c).lower(): c for c in df.columns}
-        
-        col_fecha = next((columns_lower[c] for c in columns_lower if "fecha" in c), None)
-        col_desc = next((columns_lower[c] for c in columns_lower if "descrip" in c or "glosa" in c), None)
-        col_cargo = next((columns_lower[c] for c in columns_lower if "cargo" in c or "egreso" in c), None)
-        col_abono = next((columns_lower[c] for c in columns_lower if "abono" in c or "ingreso" in c), None)
-        col_saldo = next((columns_lower[c] for c in columns_lower if "saldo" in c), None) # Opcional
+        # Mapeo de columnas flexible
+        col_fecha = next((c for c in df.columns if "Fecha" in c), None)
+        col_desc = next((c for c in df.columns if "Descripción" in c or "Descripcion" in c), None)
+        col_cargo = next((c for c in df.columns if "Cargo" in c), None)
+        col_abono = next((c for c in df.columns if "Abono" in c), None)
+        col_saldo = next((c for c in df.columns if "Saldo" in c), None) # Opcional
         
         if not all([col_fecha, col_desc]):
             print(f"Columnas detectadas: {df.columns.tolist()}")
-            raise ValueError("Faltan columnas esenciales: Fecha o Descripcion/Glosa.")
+            raise ValueError("Faltan columnas esenciales: Fecha o Descripción.")
 
         # Limpieza
         df = df.dropna(subset=[col_fecha, col_desc], how='all')

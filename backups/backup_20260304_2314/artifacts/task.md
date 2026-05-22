@@ -1,0 +1,18 @@
+# Task: Pendientes ERP The Boos Box
+
+## 🟢 ESTADO ACTUAL: Optimización Experta (Fase 1) Completada
+- **Sistema**: [http://localhost:8501](http://localhost:8501) activo.
+- **Objetivos Fase 1**:
+    - [x] Implementar Persistencia de Sesión (Storage State).
+    - [x] Desacoplar IDs de sedes a variables de entorno.
+    - [x] Optimizar flujo de login con checkpoints.
+    - [x] Refactorizar `process_bm_pagos.py` para mayor robustez.
+
+## 🚀 Próximos Pasos (Alta Prioridad)
+- [x] Validar persistencia de sesión en Marina y Campanario.
+- [ ] Pruebas de carga masiva (Fase 2).
+- [ ] **Integración MercadoPago**: Reemplazar VirtualPOS como pasarela de pagos principal.
+- [ ] **Migración PostgreSQL**: 
+    - [x] Inicializar base de datos local (`crossfit_control`).
+    - [x] Aplicar esquema de tablas (`schema.sql`).
+    - [ ] Migrar datos históricos de Excel a tablas `raw_`.
