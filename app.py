@@ -72,6 +72,39 @@ if DATABASE_URL.startswith("postgres://"):
 
 engine = create_engine(DATABASE_URL)
 
+# Validar conexión a la base de datos de forma segura
+try:
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+except Exception as db_err:
+    st.markdown("""
+        <div style="background-color: #fee2e2; border-left: 5px solid #ef4444; padding: 25px; border-radius: 16px; margin-bottom: 25px; border: 1px solid #fca5a5;">
+            <h3 style="color: #991b1b; margin-top: 0; font-weight: 800;">🔧 Conexión de Base de Datos Requerida</h3>
+            <p style="color: #7f1d1d; font-size: 1.05rem; margin-bottom: 0;">
+                El sitio web del ERP se ha levantado con éxito, pero <b>no puede conectarse a la base de datos PostgreSQL</b> de tu proyecto. Esto sucede porque las credenciales de la base de datos aún no se han compartido con el servicio web en Railway.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("### 🛠️ ¿Cómo solucionarlo en 1 minuto?")
+    
+    st.markdown("""
+    Sigue estos sencillos pasos en tu panel de control de Railway:
+    
+    1. **Entra a tu proyecto en Railway** (donde ves los recuadros de *Postgres* y *thorough-respect*).
+    2. Haz clic en el recuadro del servicio web **`thorough-respect`**.
+    3. Ve a la pestaña **Variables** en la parte superior derecha.
+    4. Haz clic en el botón **New Variable** (o *Add Variable*).
+    5. Configura la variable con estos valores:
+       * **Name (Nombre):** `DATABASE_URL`
+       * **Value (Valor):** Escribe `${{Postgres.DATABASE_URL}}` (o haz clic en el botón **Reference** y selecciona `DATABASE_URL` de la lista de Postgres).
+    6. Haz clic en **Save** (Guardar).
+    
+    *Una vez guardado, Railway reiniciará automáticamente el sitio web en unos segundos y este se conectará al 100% de forma segura cargando todos tus movimientos bancarios.*
+    """)
+    
+    st.stop()
+
 # --- SISTEMA DE DISEÑO PREMIUM ---
 st.markdown("""
 <style>
