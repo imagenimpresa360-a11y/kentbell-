@@ -6,13 +6,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_NAME = os.getenv('DB_NAME')
-DB_USER = os.getenv('DB_USER')
-DB_PASS = os.getenv('DB_PASS')
-DB_HOST = os.getenv('DB_HOST')
-DB_PORT = os.getenv('DB_PORT')
+DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    DB_USER = os.getenv('DB_USER', os.getenv('PGUSER', 'postgres'))
+    DB_PASS = os.getenv('DB_PASS', os.getenv('PGPASSWORD', 'password'))
+    DB_HOST = os.getenv('DB_HOST', os.getenv('PGHOST', 'localhost'))
+    DB_PORT = os.getenv('DB_PORT', os.getenv('PGPORT', '5432'))
+    DB_NAME = os.getenv('DB_NAME', os.getenv('PGDATABASE', 'railway'))
+    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Manejar el protocolo postgres:// legacy si viene directo de un addon de base de datos
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Asignar variables individuales para el resto del archivo que las utiliza
+DB_USER = os.getenv('DB_USER', os.getenv('PGUSER', 'postgres'))
+DB_PASS = os.getenv('DB_PASS', os.getenv('PGPASSWORD', 'password'))
+DB_HOST = os.getenv('DB_HOST', os.getenv('PGHOST', 'localhost'))
+DB_PORT = os.getenv('DB_PORT', os.getenv('PGPORT', '5432'))
+DB_NAME = os.getenv('DB_NAME', os.getenv('PGDATABASE', 'railway'))
+
 engine = create_engine(DATABASE_URL)
 
 def reconcile_bank_expenses():
