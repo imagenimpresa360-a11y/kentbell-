@@ -34,8 +34,8 @@ def process_bci_statement(file_path):
         if header_row_idx is None:
             raise ValueError("No se encontro la fila de encabezados (Fecha, Descripcion, Glosa, etc.) en las primeras 45 filas.")
             
-        # Re-leer con el header correcto
-        df = pd.read_excel(file_path, header=header_row_idx)
+        # Re-leer con el header correcto y forzando dtype=str para no perder ceros
+        df = pd.read_excel(file_path, header=header_row_idx, dtype=str)
         
         # Normalizar columnas
         df.columns = [str(c).strip() for c in df.columns]
@@ -62,13 +62,13 @@ def process_bci_statement(file_path):
         df = df.dropna(subset=['bank_date'])
 
         # Calcular Monto Neto
-        # Cargo suele ser negativo o positivo dependiendo del formato exportado.
-        # Asumiremos: Si Cargo y Abono son columnas separadas, Cargo resta y Abono suma.
         df['final_amount'] = 0.0
         
         # Helper para limpiar montos BCI (eliminar $, puntos, comas)
+        # Recibe strings exactos (e.g. "343.000", "165", "19.457")
         def clean_bci_number(val):
-            s = str(val).replace('$', '').replace('.', '').replace(',', '')
+            if pd.isna(val) or str(val).strip().lower() == 'nan': return 0.0
+            s = str(val).strip().replace('$', '').replace('.', '').replace(',', '')
             if not s or s == '-': return 0.0
             return float(s)
 
