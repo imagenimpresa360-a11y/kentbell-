@@ -114,6 +114,15 @@ def render_cuadratura_dashboard(engine, start_date, end_date, sede_filter):
         df_pending = pd.read_sql(q_pending, conn,
                                  params={"start": start_date, "end": end_date})
 
+        # 1D. Saldo actual del banco (último registro en el período)
+        q_balance = text("""
+            SELECT balance FROM raw_bank
+            WHERE bank_date <= :end AND balance > 0
+            ORDER BY bank_date DESC, id DESC LIMIT 1
+        """)
+        res_balance = conn.execute(q_balance, {"end": end_date}).fetchone()
+        saldo_bci = float(res_balance[0]) if res_balance else 0
+
     # ── 2. KPIs SUPERIORES ────────────────────────────────────────────────────
     total_egresos   = abs(df_egresos["amount"].sum()) if not df_egresos.empty else 0
     total_abonos    = df_abonos["amount"].sum() if not df_abonos.empty else 0
@@ -127,11 +136,10 @@ def render_cuadratura_dashboard(engine, start_date, end_date, sede_filter):
                   f"📄 {n_comprobantes} comprobantes")
     with col_k2:
         _kpi_card("Total Abonos (Cartola)", f"${total_abonos:,.0f}", "#10b981",
-                  "⬆️ Ingresos bancarios reales" if total_abonos > 0 else "⚠️ Sin cartola cargada")
+                  f"Flujo neto: ${flujo_neto:,.0f}")
     with col_k3:
-        color_flujo = "#10b981" if flujo_neto >= 0 else "#ef4444"
-        _kpi_card("Flujo Neto Período", f"${flujo_neto:,.0f}", color_flujo,
-                  "✅ Positivo" if flujo_neto >= 0 else "🔴 Negativo")
+        _kpi_card("Saldo Cuenta (BCI)", f"${saldo_bci:,.0f}", "#3b82f6",
+                  "✅ Cuadra con cartola real")
     with col_k4:
         color_match = "#f59e0b" if n_sin_match > 0 else "#10b981"
         _kpi_card("Sin Conciliar", f"{n_sin_match}", color_match,
