@@ -249,23 +249,7 @@ with st.sidebar:
     user_role = st.selectbox("Rol Activo", ["Admin", "Luis (Ops)", "Finanzas", "Cobranza"])
     st.info(f"Viendo como: **{user_role}**")
     st.markdown("---")
-    
-    # --- CONFIGURACIÓN DE PERIODO ---
-    st.markdown("### 📅 Periodo de Análisis")
-    col_p1, col_p2 = st.columns(2)
-    with col_p1:
-        start_date = st.date_input("Inicio", value=datetime(datetime.now().year, 1, 1))
-    with col_p2:
-        end_date = st.date_input("Fin", value=datetime.now())
-    
-    # Mantener sel_year por compatibilidad con otros módulos si es necesario
-    sel_year = start_date.year
-    
-    # ppm_rate = st.sidebar.number_input("📊 Tasa PPM (%)", value=0.25, step=0.01, help="Tasa P115 1ra Categoría (0.25%)")
-    ppm_rate = 0.25
-    
-    st.markdown("---")
-    
+
     # --- DEFINICIÓN DE MENÚS POR CATEGORÍA ---
     menu_groups = {
         "📊 Dashboards": [
@@ -316,7 +300,18 @@ with st.sidebar:
     page = st.radio("Sección", filtered_groups[selected_group])
     
     st.markdown("---")
-    st.markdown("<div style='text-align: center; font-size: 0.8rem; opacity: 0.6;'>v3.6.1 SENIOR | Enterprise Hub</div>", unsafe_allow_html=True)
+
+    # --- CONFIGURACIÓN DE PERIODO (compacto, debajo de navegación) ---
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        start_date = st.date_input("📅 Inicio", value=datetime(datetime.now().year, 1, 1))
+    with col_p2:
+        end_date = st.date_input("📅 Fin", value=datetime.now())
+    
+    sel_year = start_date.year
+    ppm_rate = 0.25
+
+    st.markdown("<div style='text-align: center; font-size: 0.8rem; opacity: 0.6; margin-top:10px;'>v3.6.1 SENIOR | Enterprise Hub</div>", unsafe_allow_html=True)
 
 # --- HEADER DINÁMICO ---
 h_col1, h_col2 = st.columns([6, 1])
@@ -625,20 +620,40 @@ elif page == "🏦 Dashboard Banco":
 
 # 2. GESTIÓN DE COACHES
 elif page == "🏃‍♂️ Gestión de Coaches":
-    show_help("Ingreso de Honorarios", """
-        **Flujo de Registro:**
-        1. Indica el coach y el mes que trabajó.
-        2. Ingresa el total de horas. El sistema calculará el monto según su tarifa base.
-        3. **Folio SII**: Puedes dejarlo en 0 si aún no te envía la boleta. Cámbialo después en la pestaña 'Historial'.
-        
-        *Ejemplo: Joaquin trabajó 40 horas en Marina. Registras, el sistema crea la deuda, y cuando le transfieras los $280.000, usas el módulo de Caja & Banco.*
-    """)
     
     tabs = st.tabs(["💰 Registro de Honorarios", "📊 Historial y Deudas", "👤 Configuración Coaches"])
     
     with tabs[0]:
-        st.markdown("### Registrar Horas Mensuales")
         df_c = pd.read_sql("SELECT id, name, base_rate, default_sede FROM coaches WHERE active = TRUE", engine)
+
+        # ─────────────────────────────────────────────────────────────
+        # 🟩 PANEL DE CONTROL MENSUAL (rectángulo verde en la foto)
+        # Muestra qué meses del año ya tienen honorarios registrados
+        # ─────────────────────────────────────────────────────────────
+        st.markdown("#### 📅 Control de Sueldos por Mes")
+        try:
+            df_meses = pd.read_sql(
+                f"SELECT month, SUM(total_honorarios) as total FROM coach_remunerations WHERE year = {sel_year} GROUP BY month ORDER BY month",
+                engine
+            )
+            meses_con_datos = df_meses['month'].tolist()
+            nombres_mes = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
+            badges = []
+            for i, nombre in enumerate(nombres_mes, 1):
+                if i in meses_con_datos:
+                    total_m = df_meses[df_meses['month']==i]['total'].values[0]
+                    badges.append(f"<span style='background:#22c55e;color:white;padding:4px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;margin:2px;display:inline-block;' title='${total_m:,.0f}'>✓ {nombre}</span>")
+                else:
+                    mes_actual = datetime.now().month
+                    color = '#f59e0b' if i == mes_actual else '#cbd5e1'
+                    txt_color = 'white' if i == mes_actual else '#64748b'
+                    badges.append(f"<span style='background:{color};color:{txt_color};padding:4px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;margin:2px;display:inline-block;'>{'⚡ ' if i==mes_actual else ''}{nombre}</span>")
+            st.markdown("<div style='background:white;padding:12px 16px;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:16px;'>" + "".join(badges) + "</div>", unsafe_allow_html=True)
+        except Exception as e_mes:
+            st.warning(f"No se pudo cargar el control mensual: {e_mes}")
+
+        st.markdown("---")
+        st.markdown("### Registrar Horas Mensuales")
         
         with st.form("honorarios_form", clear_on_submit=True):
             r1c1, r1c2, r1c3 = st.columns(3)
@@ -647,7 +662,8 @@ elif page == "🏃‍♂️ Gestión de Coaches":
                 coach_id = int(df_c[df_c['name'] == coach_sel]['id'].values[0])
                 base_rate = float(df_c[df_c['name'] == coach_sel]['base_rate'].values[0])
             with r1c2:
-                mes = st.selectbox("Mes", range(1, 13), index=datetime.now().month - 1)
+                mes = st.selectbox("Mes", range(1, 13), index=datetime.now().month - 1,
+                                   format_func=lambda x: ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][x-1])
             with r1c3:
                 anio = st.number_input("Año", value=sel_year)
             
@@ -659,23 +675,22 @@ elif page == "🏃‍♂️ Gestión de Coaches":
             with r2c3:
                 sede_c = st.selectbox("Sede de Imputación", ["Marina", "Campanario", "General"])
             
-            if st.form_submit_button("SUCCESS: Calcular y Guardar Honorario"):
+            total_preview = horas * tarifa
+            st.markdown(f"<div style='background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:8px 14px;font-size:1.1rem;font-weight:700;color:#166534;'>💰 Total a registrar: ${total_preview:,.0f}</div>", unsafe_allow_html=True)
+
+            if st.form_submit_button("✅ Calcular y Guardar Honorario", use_container_width=True):
                 total = horas * tarifa
-                due_date = f"{anio}-{mes:02d}-01" # Fecha estimada de pago
+                due_date = f"{anio}-{mes:02d}-01"
                 
                 with engine.begin() as conn:
-                    # 1. Crear/Actualizar en el libro de egresos primero (para tener el UUID)
                     res = conn.execute(text("""
                         INSERT INTO expense_ledger (description, amount_due, due_date, category_id, sede, status)
                         VALUES (:d, :a, :f, (SELECT id FROM expense_categories WHERE name = 'Sueldos Profesores' LIMIT 1), :s, 'PENDING_PAYMENT')
                         ON CONFLICT DO NOTHING 
                         RETURNING uuid
                     """), {"d": f"Honorarios {coach_sel} - {mes}/{anio}", "a": total, "f": due_date, "s": sede_c})
-                    
                     row = res.fetchone()
                     e_uuid = row[0] if row else None
-                    
-                    # 2. Guardar en remuneraciones vinculando el UUID del egreso
                     conn.execute(text("""
                         INSERT INTO coach_remunerations (coach_id, month, year, hours_worked, hourly_rate, total_honorarios, sede, status, expense_uuid)
                         VALUES (:cid, :m, :y, :h, :r, :t, :s, 'PENDING', :euuid)
@@ -685,15 +700,60 @@ elif page == "🏃‍♂️ Gestión de Coaches":
                             hourly_rate = EXCLUDED.hourly_rate,
                             expense_uuid = COALESCE(coach_remunerations.expense_uuid, EXCLUDED.expense_uuid)
                     """), {"cid": coach_id, "m": mes, "y": anio, "h": horas, "r": tarifa, "t": total, "s": sede_c, "euuid": e_uuid})
-                    
-                    # 3. Si ya existía el registro, actualizamos el monto en el ledger también
                     if not row:
                         conn.execute(text("""
                             UPDATE expense_ledger SET amount_due = :a 
                             WHERE uuid = (SELECT expense_uuid FROM coach_remunerations WHERE coach_id = :cid AND month = :m AND year = :y AND sede = :s)
                         """), {"a": total, "cid": coach_id, "m": mes, "y": anio, "s": sede_c})
+                st.success(f"✅ Honorario registrado para **{coach_sel}**: **${total:,.0f}** — Mes {mes}/{anio}")
+                st.rerun()
 
-                st.success(f"Honorario registrado para {coach_sel}: ${total:,.0f}. Reflejado en Dashboard.")
+        # ─────────────────────────────────────────────────────────────
+        # 🟥 GRILLA EN VIVO (círculo rojo en la foto)
+        # Muestra en tiempo real los honorarios registrados este año
+        # ─────────────────────────────────────────────────────────────
+        st.markdown("---")
+        st.markdown("#### 📋 Honorarios Registrados — Vista Rápida")
+        try:
+            df_live = pd.read_sql(f"""
+                SELECT 
+                    c.name as Coach,
+                    TO_CHAR(TO_DATE(r.month::text, 'MM'), 'Month') as Mes,
+                    r.year as Año,
+                    r.hours_worked as Horas,
+                    r.hourly_rate as "Tarifa/Hora",
+                    r.total_honorarios as Total,
+                    r.sede as Sede,
+                    r.status as Estado
+                FROM coach_remunerations r
+                JOIN coaches c ON r.coach_id = c.id
+                WHERE r.year = {sel_year}
+                ORDER BY r.month DESC, c.name ASC
+            """, engine)
+            if df_live.empty:
+                st.info("Sin registros este año. Ingresa el primer honorario con el formulario de arriba.")
+            else:
+                # KPI row
+                k1, k2, k3, k4 = st.columns(4)
+                k1.metric("Total Comprometido", f"${df_live['Total'].sum():,.0f}")
+                k2.metric("N° de Registros", len(df_live))
+                k3.metric("Coaches Activos", df_live['Coach'].nunique())
+                pendientes = len(df_live[df_live['Estado'] == 'PENDING'])
+                k4.metric("Pendientes de Pago", pendientes, delta=f"-{pendientes}" if pendientes > 0 else None, delta_color="inverse")
+
+                # Color status
+                def style_status(v):
+                    if v == 'PENDING': return 'background-color:#fef9c3;color:#713f12;font-weight:600'
+                    if v == 'PAID': return 'background-color:#dcfce7;color:#166534;font-weight:600'
+                    return ''
+                df_live['Total'] = df_live['Total'].apply(lambda x: f"${x:,.0f}")
+                df_live['Tarifa/Hora'] = df_live['Tarifa/Hora'].apply(lambda x: f"${x:,.0f}")
+                st.dataframe(
+                    df_live.style.applymap(style_status, subset=['Estado']),
+                    use_container_width=True, hide_index=True
+                )
+        except Exception as e_grid:
+            st.error(f"Error cargando grilla: {e_grid}")
 
     with tabs[1]:
         st.markdown("### Estado de Pagos y Boletas")
