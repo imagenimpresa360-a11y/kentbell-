@@ -105,6 +105,54 @@ except Exception as db_err:
     
     st.stop()
 
+# --- LOGIN SYSTEM ---
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.user_role = None
+
+if not st.session_state.logged_in:
+    st.markdown("""
+    <style>
+        .stApp { background-color: #0f172a; color: white; font-family: 'Outfit', sans-serif;}
+        .login-box {
+            background-color: #1e293b;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            max-width: 400px;
+            margin: 100px auto;
+            border-top: 5px solid #3b82f6;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("<div class='login-box'>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center;'>🏋️‍♂️ KENT BELL ERP</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#94a3b8; margin-bottom: 25px;'>Acceso Seguro Autorizado</p>", unsafe_allow_html=True)
+    
+    with st.form("login_form"):
+        user_input = st.text_input("Usuario")
+        pass_input = st.text_input("Contraseña", type="password")
+        submit = st.form_submit_button("Ingresar al Sistema", use_container_width=True)
+        
+        if submit:
+            if user_input == 'admin' and pass_input == 'Imagen2026':
+                st.session_state.logged_in = True
+                st.session_state.user_role = 'Admin'
+                st.rerun()
+            elif user_input == 'luis' and pass_input == 'luis2026':
+                st.session_state.logged_in = True
+                st.session_state.user_role = 'Luis'
+                st.rerun()
+            elif user_input == 'coach' and pass_input == 'coach2026':
+                st.session_state.logged_in = True
+                st.session_state.user_role = 'Coach'
+                st.rerun()
+            else:
+                st.error("Credenciales incorrectas")
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.stop()
+
 # --- SISTEMA DE DISEÑO PREMIUM ---
 st.markdown("""
 <style>
@@ -244,40 +292,37 @@ with st.sidebar:
     st.markdown("<h1 style='text-align: center; font-size: 2rem;'>🏋️‍♂️ KENT BELL</h1>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # --- SIMULADOR DE ROLES (FASE 1) ---
-    st.markdown("### 👤 Simulación de Perfil")
-    user_role = st.selectbox("Rol Activo", ["Admin", "Luis (Ops)", "Finanzas", "Cobranza"])
-    st.info(f"Viendo como: **{user_role}**")
+    # --- SISTEMA DE PERFIL ---
+    st.markdown("### 👤 Mi Perfil")
+    user_role = st.session_state.user_role
+    st.info(f"Conectado como: **{user_role}**")
+    if st.button("Cerrar Sesión", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.user_role = None
+        st.rerun()
     st.markdown("---")
 
     # --- DEFINICIÓN DE MENÚS POR CATEGORÍA ---
-    menu_groups = {
-        "🎯 Operación Diaria (Flujo)": [
-            "📥 Sync & Carga",
-            "⚖️ Cuadratura Bancaria",
-            "💸 Registrar Egresos"
-        ],
-        "🏃‍♂️ Equipo & Nómina": [
-            "🏃‍♂️ Gestión de Coaches"
-        ],
-        "📊 Dashboards (Inteligencia)": [
-            "📊 Dashboard General (P&L)",
-            "📈 Dashboard BoxMagic", 
-            "💳 Dashboard VirtualPOS",
-            "🏦 Dashboard Banco",
-            "🧾 Dashboard Lioren"
-        ],
-        "🚨 Retención & Control": [
-            "📉 Alumnos Inactivos",
-            "🚨 Alertas & Control"
-        ],
-        "🔐 Contabilidad Formal": [
-            "📑 Reportes Legales",
-            "🏦 Caja & Banco",
-            "🔐 Cierre Fiscal",
-            "Docs Históricos Finanzas"
-        ]
-    }
+    if user_role == 'Admin':
+        menu_groups = {
+            "🎯 Operación Diaria (Flujo)": ["📥 Sync & Carga", "⚖️ Cuadratura Bancaria", "💸 Registrar Egresos"],
+            "🏃‍♂️ Equipo & Nómina": ["🏃‍♂️ Gestión de Coaches"],
+            "📊 Dashboards (Inteligencia)": ["📊 Dashboard General (P&L)", "📈 Dashboard BoxMagic", "💳 Dashboard VirtualPOS", "🏦 Dashboard Banco", "🧾 Dashboard Lioren"],
+            "🚨 Retención & Control": ["📉 Alumnos Inactivos", "🚨 Alertas & Control"],
+            "🔐 Contabilidad Formal": ["📑 Reportes Legales", "🏦 Caja & Banco", "🔐 Cierre Fiscal", "Docs Históricos Finanzas"]
+        }
+    elif user_role == 'Luis':
+        menu_groups = {
+            "🎯 Operación Diaria (Flujo)": ["📥 Sync & Carga", "⚖️ Cuadratura Bancaria", "💸 Registrar Egresos"],
+            "📊 Dashboards (Inteligencia)": ["🏦 Dashboard Banco"],
+            "🔐 Contabilidad Formal": ["📑 Reportes Legales", "🏦 Caja & Banco", "🔐 Cierre Fiscal"]
+        }
+    elif user_role == 'Coach':
+        menu_groups = {
+            "🏃‍♂️ Equipo & Nómina": ["🏃‍♂️ Gestión de Coaches"]
+        }
+    else:
+        menu_groups = {}
 
     # Definir permisos por rol (visibilidad de páginas)
     role_permissions = {
