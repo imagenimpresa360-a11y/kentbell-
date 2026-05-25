@@ -19,6 +19,16 @@ from process_active_students import process_active_students_content
 from dashboard_financial import render_financial_dashboard
 from dashboard_cuadratura import render_cuadratura_dashboard
 from etl_manager import ETLManager
+import shutil
+
+# --- NEXUS BLACK BOX PROTOCOL (ENDPOINT EXPOSURE) ---
+# Copia archivos clave a la carpeta estática para que agentes externos los lean vía URL
+os.makedirs("static/export", exist_ok=True)
+try:
+    if os.path.exists("nexus.json"):
+        shutil.copy("nexus.json", "static/nexus.json")
+except Exception:
+    pass
 
 # --- CONSTANTES DE NEGOCIO ---
 NUEVOS_PRECIOS = {1:7_000, 4:27_000, 8:39_900, 10:42_900, 12:45_900, 16:51_900, 20:55_900, 24:59_900}
@@ -1079,6 +1089,13 @@ elif page == "📉 Alumnos Inactivos":
             detail_df.style.background_gradient(subset=['days_inactive'], cmap='Oranges'),
             use_container_width=True
         )
+        
+        # --- EXPORTACIÓN CAJA NEGRA ---
+        try:
+            detail_df.to_csv("static/export/inactivos_latest.csv", index=False)
+            st.info("📡 **Endpoint Caja Negra actualizado:** El listado está disponible para descarga automática de agentes externos en `/app/static/export/inactivos_latest.csv`")
+        except Exception as e:
+            pass
         
         st.markdown("---")
         st.subheader("SUCCESS: Alumnos Recuperados (Cruce con Activos)")
