@@ -21,12 +21,12 @@ from dashboard_cuadratura import render_cuadratura_dashboard
 from etl_manager import ETLManager
 import shutil
 
-# --- NEXUS BLACK BOX PROTOCOL (ENDPOINT EXPOSURE) ---
-# Copia archivos clave a la carpeta estática para que agentes externos los lean vía URL
-os.makedirs("static/export", exist_ok=True)
+# --- NEXUS BLACK BOX PROTOCOL (EXPORT DIRECTORY) ---
+# Creamos la carpeta interna de exportación. No la exponemos como estática públicamente.
+os.makedirs("export", exist_ok=True)
 try:
     if os.path.exists("nexus.json"):
-        shutil.copy("nexus.json", "static/nexus.json")
+        shutil.copy("nexus.json", "export/nexus.json")
 except Exception:
     pass
 
@@ -1092,8 +1092,8 @@ elif page == "📉 Alumnos Inactivos":
         
         # --- EXPORTACIÓN CAJA NEGRA ---
         try:
-            detail_df.to_csv("static/export/inactivos_latest.csv", index=False)
-            st.info("📡 **Endpoint Caja Negra actualizado:** El listado está disponible para descarga automática de agentes externos en `/app/static/export/inactivos_latest.csv`")
+            detail_df.to_csv("export/inactivos_latest.csv", index=False)
+            st.info("📡 **Endpoint Caja Negra Protegido:** El listado está disponible para descarga automática mediante validación segura en `/api/cajas-negras/exportar-inactivos?token=...`")
         except Exception as e:
             pass
         
