@@ -1,24 +1,23 @@
 {
     "nexus_protocol": "1.0",
     "project_name": "ERP The Boos Box",
-    "last_updated": "2026-05-24T23:49:06-04:00",
+    "last_updated": "2026-05-25T10:37:00-04:00",
     "public_report": {
         "status": "activo",
         "health_score": 100,
-        "summary": "Se implementó el Cierre Fiscal operativo (backend lock), el protocolo Caja Negra para Alumnos Inactivos, el Sistema de Roles con Login Seguro y el Dashboard de Cash Flow estilo Excel.",
+        "summary": "Sistema estabilizado. Se solucionaron bugs arquitectónicos críticos (Schema Drift de is_critical y Global State Leak de fechas). Se rediseñó la navegación con menú tipo Acordeón y se implementó la conexión en tiempo real con la API de Lioren para monitoreo de Alertas (Folios y Certificado). Se inició el plan de Testeo por Ramas.",
         "mission": "Ser un ERP Operativo Híper-Especializado basado en Flujo de Caja (Cash-Flow) para la gestión inteligente, analítica y predictiva de centros deportivos (CrossFit), operando de manera complementaria al software contable-tributario externo (Nubox).",
         "purpose": "Este agente fue diseñado y programado de manera específica para actuar como el núcleo inteligente de automatización y control financiero del holding The Boos Box. Su propósito detallado abarca: 1) La extracción automatizada de transacciones y conciliaciones de múltiples pasarelas de pago (BoxMagic, VirtualPOS y futuros métodos). 2) La centralización de ingresos y egresos en una base de datos PostgreSQL local para auditoría. 3) El diseño y ejecución de un Dashboard Financiero Estadístico para el control de Flujo de Caja en tiempo real. 4) La optimización de campañas de marketing relacionales y de fidelización a partir de patrones detectados de miembros inactivos o activos.",
         "blockers": [],
         "achievements": [
-            "Refactorización del Dashboard General a pestañas (P&L, Cash Flow, Cartola interactiva Excel-style).",
-            "Despliegue del Sistema de Login y perfiles de usuario estrictos (Admin, Luis, Coach).",
-            "Implementación del Cierre Fiscal (candado backend) para evitar alteración de periodos ya auditados.",
-            "Establecimiento del protocolo de exportación CSV (shared_agents_data) para alimentar al Agente Caja Negra de alumnos."
+            "Reingeniería de UI: Menú de navegación lateral convertido a Acordeón y limpieza de calendario global.",
+            "Integración API Lioren: Conexión en vivo con el endpoint /api/cafs (tipodoc 41) y /api/miempresa para monitorear Certificados y Folios.",
+            "Corrección Estructural: Fix en Railway BD para esquema faltante (is_critical) y corrección de fuga de variables globales (NameError).",
+            "Módulo de Testing: Desactivación temporal del flujo de autenticación (Login) para acelerar validaciones."
         ],
         "pending_tasks": [
-            "Obtener Token API de Lioren para conectar en vivo el panel de Alertas (Folios SII y Certificado Digital).",
-            "Integrar el CSV de resultados generado por el Agente Caja Negra en el panel visual de Alumnos Inactivos.",
-            "Mantenimiento y monitoreo preventivo de selectores CSS en los scrapers bancarios (VirtualPOS/BoxMagic)."
+            "Fase de Testing: Validar rama 'Operación Diaria' (Sync & Carga, Cuadratura Bancaria, Registrar Egresos).",
+            "Integrar el CSV de resultados generado por el Agente Caja Negra en el panel visual de Alumnos Inactivos."
         ]
     },
     "meta": {
