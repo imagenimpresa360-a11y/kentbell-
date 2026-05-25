@@ -163,8 +163,9 @@ except Exception as db_err:
 
 # --- LOGIN SYSTEM ---
 if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.user_role = None
+    # MODO TESTING: Auto-login como Admin para testeo rápido
+    st.session_state.logged_in = True
+    st.session_state.user_role = 'Admin'
 
 if not st.session_state.logged_in:
     st.markdown("""
