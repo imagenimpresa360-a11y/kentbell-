@@ -180,7 +180,7 @@ st.markdown("""
         color: #1e293b;
     }
     .stApp { 
-        background-color: #f1f5f9; 
+        background-color: #2d3748; /* Gris Grafico */
     }
     
     /* Constrain main content for better readability */
@@ -217,11 +217,8 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
-    /* Input Styling - White and Clean */
+    /* Input Styling */
     .stTextInput>div>div>input, .stNumberInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>div {
-        background-color: white !important;
-        color: #1e293b !important;
-        border: 1px solid #e2e8f0 !important;
         border-radius: 10px !important;
         transition: all 0.2s;
     }
@@ -276,21 +273,7 @@ st.markdown("""
         font-weight: 600;
     }
 
-    /* Buttons */
-    .stButton>button {
-        background: #2563eb;
-        color: white;
-        border-radius: 10px;
-        font-weight: 600;
-        padding: 0.5rem 1.5rem;
-        border: none;
-        transition: all 0.2s;
-        width: 100%;
-    }
-    .stButton>button:hover {
-        background: #1d4ed8;
-        transform: scale(1.02);
-    }
+    /* Buttons override removed for better native contrast */
     
     /* Content Blocks */
     .glass-card {
@@ -340,40 +323,26 @@ with st.sidebar:
     else:
         menu_groups = {}
 
-    # Definir permisos por rol (visibilidad de páginas)
-    role_permissions = {
-        "Luis (Ops)": ["💸 Registrar Egresos", "🏃‍♂️ Gestión de Coaches", "📑 Reportes Legales", "📥 Sync & Carga"],
-        "Finanzas": ["📊 Dashboard General (P&L)", "🏦 Dashboard Banco", "📥 Sync & Carga", "📑 Reportes Legales", "🚨 Alertas & Control", "🧾 Dashboard Lioren", "🏦 Caja & Banco", "🔐 Cierre Fiscal", "Docs Históricos Finanzas"],
-        "Cobranza": ["📉 Alumnos Inactivos", "📈 Dashboard BoxMagic", "💳 Dashboard VirtualPOS"],
-        "Admin": [item for sublist in menu_groups.values() for item in sublist]
-    }
-
-    allowed_pages = role_permissions.get(user_role, [])
-    
-    # Filtrar grupos de menú según el rol
-    filtered_groups = {}
-    for group, pages in menu_groups.items():
-        visible_pages = [p for p in pages if p in allowed_pages]
-        if visible_pages:
-            filtered_groups[group] = visible_pages
-
-    # 1. Seleccionar Categoría Principal
+    # 1. Acordeón de Navegación (Árbol de subdirectorios)
     st.markdown("### 🧭 NAVEGACIÓN")
-    selected_group = st.selectbox("Categoría", list(filtered_groups.keys()))
     
-    # 2. Seleccionar Página dentro de la categoría
-    page = st.radio("Sección", filtered_groups[selected_group])
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = menu_groups[list(menu_groups.keys())[0]][0]
+
+    for group, pages in menu_groups.items():
+        with st.expander(group, expanded=(st.session_state.current_page in pages)):
+            for p in pages:
+                # Botones nativos como enlaces de navegación
+                btn_type = "primary" if st.session_state.current_page == p else "secondary"
+                if st.button(p, use_container_width=True, key=f"nav_{p}", type=btn_type):
+                    st.session_state.current_page = p
+                    st.rerun()
+
+    page = st.session_state.current_page
     
     st.markdown("---")
-
-    # --- CONFIGURACIÓN DE PERIODO (compacto, debajo de navegación) ---
-    col_p1, col_p2 = st.columns(2)
-    with col_p1:
-        start_date = st.date_input("📅 Inicio", value=datetime(datetime.now().year, 1, 1))
-    with col_p2:
-        end_date = st.date_input("📅 Fin", value=datetime.now())
     
-    sel_year = start_date.year
+    sel_year = datetime.now().year
     ppm_rate = 0.25
 
     st.markdown("<div style='text-align: center; font-size: 0.8rem; opacity: 0.6; margin-top:10px;'>v3.6.1 SENIOR | Enterprise Hub</div>", unsafe_allow_html=True)
@@ -1501,11 +1470,24 @@ elif page == "📥 Sync & Carga":
         with st.spinner("Sincronizando todas las fuentes de datos y ejecutando conciliación..."):
             res = manager.run_full_sync()
         
-        st.success("SUCCESS: Sincronización completada.")
-        cols = st.columns(len(res))
-        for i, (src, status) in enumerate(res.items()):
-            color = "normal" if "Success" in status else "inverse"
-            cols[i].metric(src.capitalize(), status, delta_color=color)
+        # Analizar resultados para mostrar info amigable
+        failed_sources = []
+        success_sources = []
+        for src, status in res.items():
+            if "Success" in status or "Processed" in status:
+                success_sources.append(src.capitalize())
+            else:
+                failed_sources.append((src.capitalize(), status))
+                
+        if success_sources:
+            st.success(f"✅ **Sincronización Automática Exitosa para:** {', '.join(success_sources)}")
+            
+        if failed_sources:
+            st.warning("⚠️ **Requiere Carga Manual:** Al estar el sistema en la nube (Railway), no tiene acceso a tu carpeta de Descargas local. Por favor, usa las pestañas de abajo para subir estos archivos:")
+            for src, error in failed_sources:
+                # Simplificar el mensaje de error para el usuario
+                user_err = "Archivo no encontrado en el servidor" if "not found" in error.lower() or "no new file" in error.lower() else error
+                st.error(f"❌ **{src}**: {user_err}")
         
         if st.button("Re-cargar Aplicación"):
             st.rerun()
