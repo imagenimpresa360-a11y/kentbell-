@@ -1126,195 +1126,273 @@ elif page == "💸 Registrar Egresos":
         </style>
     """, unsafe_allow_html=True)
     
-    st.markdown("<h1>📁 Registro de Documentos de Compra (FB60)</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>📁 Módulo de Gestión de Egresos</h1>", unsafe_allow_html=True)
     
-    # 1. Cargar Datos Maestros
-    with engine.connect() as conn:
-        suppliers_df = pd.read_sql(text("SELECT id, rut, name FROM suppliers ORDER BY name"), conn)
-        categories_df = pd.read_sql(text("SELECT id, name FROM expense_categories ORDER BY name"), conn)
-
-    # UI de Cabecera
-    st.markdown('<div class="sap-header"><b>DATOS DE CABECERA:</b> Información general del documento legal.</div>', unsafe_allow_html=True)
+    tab_control, tab_registro = st.tabs(["📋 Control de Egresos por Mes", "➕ Registrar Documento (FB60)"])
     
-    # Session state for dynamic calc
-    if 'exp_amount' not in st.session_state: st.session_state.exp_amount = 0.0
-
-    with st.container():
-        c1, c2, c3 = st.columns([2,2,1])
-        with c1:
-            doc_type = st.selectbox("Tipo de Documento", 
-                ["Factura Electrónica (IVA 19%)", "Boleta de Honorarios (Ret. 13.75%)", "Boleta / Voucher / Otros (Exento)"])
-            doc_date = st.date_input("Fecha Contable / Emisión", datetime.now())
-        with c2:
-            # Selector de Proveedor con opción de crear uno rápido
-            supplier_names = suppliers_df['name'].tolist()
-            sel_supp = st.selectbox("Proveedor (Dato Maestro)", ["-- SELECCIONE O CREE NUEVO --"] + supplier_names)
-            doc_folio = st.number_input("Folio Documento (N°)", min_value=1, step=1, value=1)
-        with c3:
-            total_amount = st.number_input("Monto Total ($)", min_value=0, step=100)
-
-    st.markdown('<div class="sap-header"><b>POSICIÓN Y COSTOS:</b> Distribución contable y centros de costo.</div>', unsafe_allow_html=True)
+    with tab_control:
+        st.markdown("### 📅 Libro Auxiliar de Compras & Flujo de Caja")
+        st.caption("Filtra tus egresos mes a mes, audita el estado de cuadratura con la cartola del banco y detecta pendientes.")
+        
+        # Selector de período
+        col_m1, col_m2 = st.columns(2)
+        with col_m1:
+            mes_sel = st.selectbox("Seleccionar Mes de Consulta", range(1, 13), index=datetime.now().month - 1,
+                                   format_func=lambda x: ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][x-1])
+        with col_m2:
+            anio_sel = st.number_input("Seleccionar Año de Consulta", value=datetime.now().year, step=1)
+            
+        # Cargar egresos del período seleccionado
+        query_month = text("""
+            SELECT 
+                e.uuid, 
+                e.due_date as "Fecha", 
+                COALESCE(s.name, e.description) as "Proveedor / Detalle",
+                ec.name as "Categoría",
+                e.source_sii_folio as "Folio", 
+                e.amount_due as "Monto", 
+                e.sede as "Sede", 
+                e.status as "Estado"
+            FROM expense_ledger e
+            LEFT JOIN suppliers s ON e.supplier_id = s.id
+            LEFT JOIN expense_categories ec ON e.category_id = ec.id
+            WHERE EXTRACT(MONTH FROM e.due_date) = :month 
+              AND EXTRACT(YEAR FROM e.due_date) = :year
+            ORDER BY e.due_date DESC, e.created_at DESC
+        """)
+        
+        with engine.connect() as conn:
+            df_month = pd.read_sql(query_month, conn, params={"month": mes_sel, "year": anio_sel})
+            
+        if df_month.empty:
+            st.info(f"ℹ️ No hay egresos contables registrados para {[\"Enero\",\"Febrero\",\"Marzo\",\"Abril\",\"Mayo\",\"Junio\",\"Julio\",\"Agosto\",\"Septiembre\",\"Octubre\",\"Noviembre\",\"Diciembre\"][mes_sel-1]} de {anio_sel}.")
+        else:
+            # Calcular KPIs de Cuadratura Operativa
+            total_egresos = df_month["Monto"].sum()
+            total_conciliado = df_month[df_month["Estado"].isin(["PAID_VERIFIED", "PAID"])]["Monto"].sum()
+            total_pendiente = total_egresos - total_conciliado
+            
+            k1, k2, k3 = st.columns(3)
+            with k1:
+                st.metric("Total Egresos Registrados", f"${total_egresos:,.0f}")
+            with k2:
+                pct = (total_conciliado / total_egresos * 100) if total_egresos > 0 else 0
+                st.metric("Total Cuadrado con Banco (BCI)", f"${total_conciliado:,.0f}", delta=f"{pct:.1f}% conciliado")
+            with k3:
+                st.metric("Pendiente por Cuadrar / Pagar", f"${total_pendiente:,.0f}", delta=f"-${total_pendiente:,.0f}" if total_pendiente > 0 else "✓ Todo al día", delta_color="inverse" if total_pendiente > 0 else "normal")
+                
+            # Preparar visualización
+            df_disp = df_month.copy()
+            df_disp["Fecha"] = pd.to_datetime(df_disp["Fecha"]).dt.strftime("%d/%m/%Y")
+            df_disp["Monto"] = df_disp["Monto"].apply(lambda x: f"${x:,.0f}")
+            df_disp["Folio"] = df_disp["Folio"].fillna("—")
+            
+            # Generar columnas de estado claras
+            df_disp["Cuadratura"] = df_disp["Estado"].apply(lambda x: "✅ Conciliado (Flujo Cerrado)" if x in ["PAID_VERIFIED", "PAID"] else "❌ Pendiente de Match Bancario")
+            df_disp["Estado"] = df_disp["Estado"].apply(lambda x: "CONCILIADO" if x in ["PAID_VERIFIED", "PAID"] else "PENDIENTE")
+            
+            # Formato de color para la tabla
+            def color_cuadratura(val):
+                if val == "CONCILIADO":
+                    return "background-color:#dcfce7; color:#166534; font-weight:bold"
+                return "background-color:#fee2e2; color:#991b1b; font-weight:bold"
+                
+            cols_show = ["Fecha", "Proveedor / Detalle", "Categoría", "Folio", "Monto", "Sede", "Cuadratura", "Estado"]
+            styled_table = df_disp[cols_show].style.applymap(color_cuadratura, subset=["Estado"])
+            
+            st.dataframe(styled_table, use_container_width=True, height=450)
+            st.info("💡 **Tip Operativo:** Para cuadrar los egresos marcados con '❌ Pendiente', dirígete al menú de **Cuadratura Bancaria** y utiliza el MatchMaker para enlazarlos con el cargo bancario real en 1 clic.")
+            
+    with tab_registro:
+        st.markdown("<h1>📁 Registro de Documentos de Compra (FB60)</h1>", unsafe_allow_html=True)
+        
+        # 1. Cargar Datos Maestros
+        with engine.connect() as conn:
+            suppliers_df = pd.read_sql(text("SELECT id, rut, name FROM suppliers ORDER BY name"), conn)
+            categories_df = pd.read_sql(text("SELECT id, name FROM expense_categories ORDER BY name"), conn)
     
-    with st.container():
-        d1, d2, d3 = st.columns(3)
-        with d1:
-            sel_cat = st.selectbox("Cuenta Contable (Categoría)", categories_df['name'].tolist())
-        with d2:
-            sel_sede = st.selectbox("Centro de Costo (Sede)", ["Marina", "Campanario", "General"])
-        with d3:
-            is_critical = st.toggle("Gasto Crítico (Bloqueante)", value=False)
-
-    # Lógica de Impuestos Automática
-    neto, impuesto = 0, 0
-    if "Factura" in doc_type:
-        neto = round(total_amount / 1.19)
-        impuesto = total_amount - neto
-        tax_label = "IVA (19%)"
-    elif "Honorarios" in doc_type:
-        # En Chile: Bruto - Retención = Liquido. Aquí asumimos total_amount es el BRUTO.
-        impuesto = round(total_amount * 0.1375)
-        neto = total_amount - impuesto
-        tax_label = "Retención (13.75%)"
-    else:
-        neto = total_amount
-        impuesto = 0
-        tax_label = "N/A (Exento)"
-
-    # Resumen de validación
-    st.markdown("---")
-    res_col1, res_col2, res_col3 = st.columns(3)
-    res_col1.metric("Neto / Imponible", f"${neto:,.0f}")
-    res_col2.metric(tax_label, f"${impuesto:,.0f}")
-    res_col3.metric("Total Documento", f"${total_amount:,.0f}")
-
-    if sel_supp == "-- SELECCIONE O CREE NUEVO --":
-        with st.expander("➕ ALTA RÁPIDA DE PROVEEDOR"):
-            with st.form("quick_supp"):
-                q_name = st.text_input("Razón Social / Nombre")
-                q_rut = st.text_input("RUT (ej: 12.345.678-9)")
-                q_cat = st.selectbox("Categoría Predeterminada", categories_df['name'].tolist())
-                if st.form_submit_button("💾 Crear y Vincular"):
-                    if q_name and q_rut:
+        # UI de Cabecera
+        st.markdown('<div class="sap-header"><b>DATOS DE CABECERA:</b> Información general del documento legal.</div>', unsafe_allow_html=True)
+        
+        # Session state for dynamic calc
+        if 'exp_amount' not in st.session_state: st.session_state.exp_amount = 0.0
+    
+        with st.container():
+            c1, c2, c3 = st.columns([2,2,1])
+            with c1:
+                doc_type = st.selectbox("Tipo de Documento", 
+                    ["Factura Electrónica (IVA 19%)", "Boleta de Honorarios (Ret. 13.75%)", "Boleta / Voucher / Otros (Exento)"])
+                doc_date = st.date_input("Fecha Contable / Emisión", datetime.now())
+            with c2:
+                # Selector de Proveedor con opción de crear uno rápido
+                supplier_names = suppliers_df['name'].tolist()
+                sel_supp = st.selectbox("Proveedor (Dato Maestro)", ["-- SELECCIONE O CREE NUEVO --"] + supplier_names)
+                doc_folio = st.number_input("Folio Documento (N°)", min_value=1, step=1, value=1)
+            with c3:
+                total_amount = st.number_input("Monto Total ($)", min_value=0, step=100)
+    
+        st.markdown('<div class="sap-header"><b>POSICIÓN Y COSTOS:</b> Distribución contable y centros de costo.</div>', unsafe_allow_html=True)
+        
+        with st.container():
+            d1, d2, d3 = st.columns(3)
+            with d1:
+                sel_cat = st.selectbox("Cuenta Contable (Categoría)", categories_df['name'].tolist())
+            with d2:
+                sel_sede = st.selectbox("Centro de Costo (Sede)", ["Marina", "Campanario", "General"])
+            with d3:
+                is_critical = st.toggle("Gasto Crítico (Bloqueante)", value=False)
+    
+        # Lógica de Impuestos Automática
+        neto, impuesto = 0, 0
+        if "Factura" in doc_type:
+            neto = round(total_amount / 1.19)
+            impuesto = total_amount - neto
+            tax_label = "IVA (19%)"
+        elif "Honorarios" in doc_type:
+            # En Chile: Bruto - Retención = Liquido. Aquí asumimos total_amount es el BRUTO.
+            impuesto = round(total_amount * 0.1375)
+            neto = total_amount - impuesto
+            tax_label = "Retención (13.75%)"
+        else:
+            neto = total_amount
+            impuesto = 0
+            tax_label = "N/A (Exento)"
+    
+        # Resumen de validación
+        st.markdown("---")
+        res_col1, res_col2, res_col3 = st.columns(3)
+        res_col1.metric("Neto / Imponible", f"${neto:,.0f}")
+        res_col2.metric(tax_label, f"${impuesto:,.0f}")
+        res_col3.metric("Total Documento", f"${total_amount:,.0f}")
+    
+        if sel_supp == "-- SELECCIONE O CREE NUEVO --":
+            with st.expander("➕ ALTA RÁPIDA DE PROVEEDOR"):
+                with st.form("quick_supp"):
+                    q_name = st.text_input("Razón Social / Nombre")
+                    q_rut = st.text_input("RUT (ej: 12.345.678-9)")
+                    q_cat = st.selectbox("Categoría Predeterminada", categories_df['name'].tolist())
+                    if st.form_submit_button("💾 Crear y Vincular"):
+                        if q_name and q_rut:
+                            try:
+                                # Obtener cat id
+                                qc_id = int(categories_df[categories_df['name'] == q_cat]['id'].iloc[0])
+                                with engine.begin() as conn:
+                                    conn.execute(text("INSERT INTO suppliers (rut, name, category_id) VALUES (:r, :n, :c)"), 
+                                                 {"r": q_rut, "n": q_name, "c": qc_id})
+                                st.success(f"Proveedor {q_name} creado. Por favor selecciona de la lista.")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error: {e}")
+                        else:
+                            st.warning("Nombre y RUT son obligatorios.")
+    
+        if st.button("🏁 CONTABILIZAR DOCUMENTO (POST)", type="primary", use_container_width=True):
+            if total_amount <= 0:
+                st.error("El monto debe ser mayor a cero.")
+            elif sel_supp == "-- SELECCIONE O CREE NUEVO --":
+                st.warning("Debe seleccionar un proveedor válido.")
+            else:
+                try:
+                    # Obtener ID del proveedor
+                    supp_id = int(suppliers_df[suppliers_df['name'] == sel_supp]['id'].iloc[0])
+                    cat_id = int(categories_df[categories_df['name'] == sel_cat]['id'].iloc[0])
+                    
+                    with engine.begin() as conn:
+                        # Verificar duplicado
+                        dup = conn.execute(text("SELECT uuid FROM expense_ledger WHERE supplier_id = :s AND source_sii_folio = :f"), 
+                                         {"s": supp_id, "f": doc_folio}).fetchone()
+                        
+                        if dup:
+                            st.error(f"WARN:️ Documento Duplicado: El folio {doc_folio} ya existe para este proveedor.")
+                        else:
+                            conn.execute(text("""
+                                INSERT INTO expense_ledger 
+                                (description, supplier_id, category_id, amount_due, net_amount, iva_amount, due_date, status, is_critical, sede, source_sii_folio) 
+                                VALUES (:d, :sid, :cid, :a, :n, :i, :f, 'PENDING_PAYMENT', :crit, :s, :fol)
+                            """), 
+                            {
+                                "d": f"{doc_type} {doc_folio} - {sel_cat}",
+                                "sid": supp_id,
+                                "cid": cat_id,
+                                "a": total_amount,
+                                "n": neto,
+                                "i": impuesto,
+                                "f": doc_date,
+                                "crit": is_critical,
+                                "s": sel_sede,
+                                "fol": doc_folio
+                            })
+                            st.success(f"SUCCESS: Documento {doc_folio} contabilizado exitosamente para {sel_supp}.")
+                            st.balloons()
+                            st.rerun()
+                except Exception as ex:
+                    st.error(f"Error al contabilizar: {ex}")
+    
+        st.markdown("---")
+        st.subheader("📋 Egresos Recientes (Audit View)")
+        # Improved Query with Join for Supplier Name
+        query_recent = """
+            SELECT 
+                e.uuid, 
+                e.due_date as fecha, 
+                COALESCE(s.name, e.description) as proveedor,
+                e.source_sii_folio as folio, 
+                e.amount_due as monto, 
+                e.sede, 
+                e.status 
+            FROM expense_ledger e
+            LEFT JOIN suppliers s ON e.supplier_id = s.id
+            ORDER BY e.created_at DESC 
+            LIMIT 15
+        """
+        df_recent = pd.read_sql(query_recent, engine)
+        st.dataframe(df_recent, use_container_width=True)
+    
+        if user_role == "Admin":
+            with st.expander("🗑️ Eliminar Gasto (Admin)"):
+                st.warning("WARN:️ Esta acción es irreversible. Eliminará el gasto del Dashboard and cualquier vínculo con Coaches.")
+            
+            # 1. Traer lista de egresos recientes para el selector (Zero Copy)
+            df_to_del = pd.read_sql("""
+                SELECT uuid, due_date, description, amount_due, status 
+                FROM expense_ledger 
+                ORDER BY created_at DESC LIMIT 50
+            """, engine)
+    
+            if not df_to_del.empty:
+                # Formatear opciones para que sean legibles
+                options = df_to_del['uuid'].tolist()
+                def format_exp(uid):
+                    row = df_to_del[df_to_del['uuid'] == uid].iloc[0]
+                    status_icon = "🟢" if "PAID" in row['status'] else "🔴"
+                    return f"{status_icon} {row['due_date']} | {row['description'][:30]} | ${row['amount_due']:,.0f}"
+                
+                target_uid = st.selectbox("Seleccione el Gasto a Eliminar", options=options, format_func=format_exp)
+                
+                # Verificar estado antes de mostrar botón
+                target_status = df_to_del[df_to_del['uuid'] == target_uid]['status'].values[0]
+                is_locked = "PAID" in target_status
+                
+                if is_locked:
+                    st.error("⛔ ESTE GASTO ESTÁ CONCILIADO (PAGADO).")
+                    st.markdown(f"Para mantener la integridad contable, no puede eliminar un gasto que ya cruzó con el banco. \n**Acción Requerida:** Pida a Finanzas que anule la conciliación primero.")
+                else:
+                    if st.button("🚀 CONFIRMAR ELIMINACIÓN DEFINITIVA"):
                         try:
-                            # Obtener cat id
-                            qc_id = int(categories_df[categories_df['name'] == q_cat]['id'].iloc[0])
                             with engine.begin() as conn:
-                                conn.execute(text("INSERT INTO suppliers (rut, name, category_id) VALUES (:r, :n, :c)"), 
-                                             {"r": q_rut, "n": q_name, "c": qc_id})
-                            st.success(f"Proveedor {q_name} creado. Por favor selecciona de la lista.")
+                                # EXPERT FIX: Eliminar primero las referencias para evitar ForeignKeyViolation
+                                # 1. Limpiar/Eliminar registros de remuneraciones vinculados
+                                conn.execute(text("DELETE FROM coach_remunerations WHERE expense_uuid = :u"), {"u": target_uid})
+                                
+                                # 2. Eliminar el registro principal del ledger
+                                conn.execute(text("DELETE FROM expense_ledger WHERE uuid = :u"), {"u": target_uid})
+                                
+                            st.success("Gasto y registros asociados eliminados correctamente.")
                             st.rerun()
                         except Exception as e:
-                            st.error(f"Error: {e}")
-                    else:
-                        st.warning("Nombre y RUT son obligatorios.")
-
-    if st.button("🏁 CONTABILIZAR DOCUMENTO (POST)", type="primary", use_container_width=True):
-        if total_amount <= 0:
-            st.error("El monto debe ser mayor a cero.")
-        elif sel_supp == "-- SELECCIONE O CREE NUEVO --":
-            st.warning("Debe seleccionar un proveedor válido.")
-        else:
-            try:
-                # Obtener ID del proveedor
-                supp_id = int(suppliers_df[suppliers_df['name'] == sel_supp]['id'].iloc[0])
-                cat_id = int(categories_df[categories_df['name'] == sel_cat]['id'].iloc[0])
-                
-                with engine.begin() as conn:
-                    # Verificar duplicado
-                    dup = conn.execute(text("SELECT uuid FROM expense_ledger WHERE supplier_id = :s AND source_sii_folio = :f"), 
-                                     {"s": supp_id, "f": doc_folio}).fetchone()
-                    
-                    if dup:
-                        st.error(f"WARN:️ Documento Duplicado: El folio {doc_folio} ya existe para este proveedor.")
-                    else:
-                        conn.execute(text("""
-                            INSERT INTO expense_ledger 
-                            (description, supplier_id, category_id, amount_due, net_amount, iva_amount, due_date, status, is_critical, sede, source_sii_folio) 
-                            VALUES (:d, :sid, :cid, :a, :n, :i, :f, 'PENDING_PAYMENT', :crit, :s, :fol)
-                        """), 
-                        {
-                            "d": f"{doc_type} {doc_folio} - {sel_cat}",
-                            "sid": supp_id,
-                            "cid": cat_id,
-                            "a": total_amount,
-                            "n": neto,
-                            "i": impuesto,
-                            "f": doc_date,
-                            "crit": is_critical,
-                            "s": sel_sede,
-                            "fol": doc_folio
-                        })
-                        st.success(f"SUCCESS: Documento {doc_folio} contabilizado exitosamente para {sel_supp}.")
-                        st.balloons()
-                        st.rerun()
-            except Exception as ex:
-                st.error(f"Error al contabilizar: {ex}")
-
-    st.markdown("---")
-    st.subheader("📋 Egresos Recientes (Audit View)")
-    # Improved Query with Join for Supplier Name
-    query_recent = """
-        SELECT 
-            e.uuid, 
-            e.due_date as fecha, 
-            COALESCE(s.name, e.description) as proveedor,
-            e.source_sii_folio as folio, 
-            e.amount_due as monto, 
-            e.sede, 
-            e.status 
-        FROM expense_ledger e
-        LEFT JOIN suppliers s ON e.supplier_id = s.id
-        ORDER BY e.created_at DESC 
-        LIMIT 15
-    """
-    df_recent = pd.read_sql(query_recent, engine)
-    st.dataframe(df_recent, use_container_width=True)
-
-    if user_role == "Admin":
-        with st.expander("🗑️ Eliminar Gasto (Admin)"):
-            st.warning("WARN:️ Esta acción es irreversible. Eliminará el gasto del Dashboard y cualquier vínculo con Coaches.")
-        
-        # 1. Traer lista de egresos recientes para el selector (Zero Copy)
-        df_to_del = pd.read_sql("""
-            SELECT uuid, due_date, description, amount_due, status 
-            FROM expense_ledger 
-            ORDER BY created_at DESC LIMIT 50
-        """, engine)
-
-        if not df_to_del.empty:
-            # Formatear opciones para que sean legibles
-            options = df_to_del['uuid'].tolist()
-            def format_exp(uid):
-                row = df_to_del[df_to_del['uuid'] == uid].iloc[0]
-                status_icon = "🟢" if "PAID" in row['status'] else "🔴"
-                return f"{status_icon} {row['due_date']} | {row['description'][:30]} | ${row['amount_due']:,.0f}"
-            
-            target_uid = st.selectbox("Seleccione el Gasto a Eliminar", options=options, format_func=format_exp)
-            
-            # Verificar estado antes de mostrar botón
-            target_status = df_to_del[df_to_del['uuid'] == target_uid]['status'].values[0]
-            is_locked = "PAID" in target_status
-            
-            if is_locked:
-                st.error("⛔ ESTE GASTO ESTÁ CONCILIADO (PAGADO).")
-                st.markdown(f"Para mantener la integridad contable, no puede eliminar un gasto que ya cruzó con el banco. \n**Acción Requerida:** Pida a Finanzas que anule la conciliación primero.")
+                            st.error(f"ERROR: Error crítico de base de datos: {e}")
             else:
-                if st.button("🚀 CONFIRMAR ELIMINACIÓN DEFINITIVA"):
-                    try:
-                        with engine.begin() as conn:
-                            # EXPERT FIX: Eliminar primero las referencias para evitar ForeignKeyViolation
-                            # 1. Limpiar/Eliminar registros de remuneraciones vinculados
-                            conn.execute(text("DELETE FROM coach_remunerations WHERE expense_uuid = :u"), {"u": target_uid})
-                            
-                            # 2. Eliminar el registro principal del ledger
-                            conn.execute(text("DELETE FROM expense_ledger WHERE uuid = :u"), {"u": target_uid})
-                            
-                        st.success("Gasto y registros asociados eliminados correctamente.")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"ERROR: Error crítico de base de datos: {e}")
-        else:
-            st.info("No hay egresos registrados para eliminar.")
+                st.info("No hay egresos registrados para eliminar.")
 
 # 7. SYNC & CARGA
 elif page == "📥 Sync & Carga":

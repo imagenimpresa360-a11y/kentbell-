@@ -41,7 +41,20 @@ load_dotenv()
 
 class ETLManager:
     def __init__(self):
-        self.db_url = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+        load_dotenv()
+        db_url = os.getenv('DATABASE_URL')
+        if not db_url:
+            db_user = os.getenv('DB_USER', os.getenv('PGUSER', 'postgres'))
+            db_pass = os.getenv('DB_PASS', os.getenv('PGPASSWORD', 'password'))
+            db_host = os.getenv('DB_HOST', os.getenv('PGHOST', 'localhost'))
+            db_port = os.getenv('DB_PORT', os.getenv('PGPORT', '5432'))
+            db_name = os.getenv('DB_NAME', os.getenv('PGDATABASE', 'railway'))
+            db_url = f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+        
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+            
+        self.db_url = db_url
         self.engine = create_engine(self.db_url)
         self.status = "IDLE"
 
