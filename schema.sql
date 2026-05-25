@@ -153,6 +153,7 @@ CREATE TABLE IF NOT EXISTS expense_ledger (
     source_bank_id VARCHAR(100),
     
     status expense_status DEFAULT 'PENDING_PAYMENT',
+    is_critical BOOLEAN DEFAULT FALSE,
     notes TEXT,
     
     created_at TIMESTAMP DEFAULT NOW(),

@@ -423,6 +423,12 @@ with st.sidebar:
     st.markdown("---")
     
     sel_year = datetime.now().year
+    
+    # Declaración global de fechas para solucionar el NameError en Dashboards
+    # Como ya no se eligen en la barra lateral, se establece por defecto el año fiscal completo
+    start_date = datetime(sel_year, 1, 1).date()
+    end_date = datetime(sel_year, 12, 31).date()
+    
     ppm_rate = 0.25
 
     st.markdown("<div style='text-align: center; font-size: 0.8rem; opacity: 0.6; margin-top:10px;'>v3.6.1 SENIOR | Enterprise Hub</div>", unsafe_allow_html=True)
