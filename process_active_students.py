@@ -56,6 +56,19 @@ def process_active_students_content(content, sede="General"):
     if df.empty:
         return 0, 0
 
+    # --- PROTOCOLO AGENTE CAJA NEGRA (INACTIVOS) ---
+    try:
+        shared_dir = os.path.join(os.getcwd(), 'shared_agents_data')
+        os.makedirs(shared_dir, exist_ok=True)
+        today_str = datetime.now().strftime('%Y-%m-%d')
+        file_name = f"bm_activos_{sede}_{today_str}.csv"
+        file_path = os.path.join(shared_dir, file_name)
+        df.to_csv(file_path, index=False, encoding='utf-8-sig')
+        print(f"   ✓ Backup para Caja Negra: {file_name}")
+    except Exception as io_err:
+        print(f"   ! Error guardando backup para Caja Negra: {io_err}")
+    # -----------------------------------------------
+
     try:
         conn = psycopg2.connect(host=DB_HOST, database=DB_NAME, user=DB_USER, password=DB_PASS)
         cur = conn.cursor()
