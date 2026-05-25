@@ -252,25 +252,29 @@ with st.sidebar:
 
     # --- DEFINICIÓN DE MENÚS POR CATEGORÍA ---
     menu_groups = {
-        "📊 Dashboards": [
-            "📊 Dashboard General (P&L)",
+        "🎯 Operación Diaria (Flujo)": [
+            "📥 Sync & Carga",
             "⚖️ Cuadratura Bancaria",
+            "💸 Registrar Egresos"
+        ],
+        "🏃‍♂️ Equipo & Nómina": [
+            "🏃‍♂️ Gestión de Coaches"
+        ],
+        "📊 Dashboards (Inteligencia)": [
+            "📊 Dashboard General (P&L)",
             "📈 Dashboard BoxMagic", 
             "💳 Dashboard VirtualPOS",
-            "🧾 Dashboard Lioren",
-            "🏦 Dashboard Banco"
+            "🏦 Dashboard Banco",
+            "🧾 Dashboard Lioren"
         ],
-        "💸 Egresos": [
-            "🏃‍♂️ Gestión de Coaches",
-            "💸 Registrar Egresos",
-            "🏦 Caja & Banco",
-            "🔐 Cierre Fiscal"
-        ],
-        "📥 Reportes y Carga": [
-            "📥 Sync & Carga",
-            "📑 Reportes Legales",
+        "🚨 Retención & Control": [
             "📉 Alumnos Inactivos",
-            "🚨 Alertas & Control",
+            "🚨 Alertas & Control"
+        ],
+        "🔐 Contabilidad Formal": [
+            "📑 Reportes Legales",
+            "🏦 Caja & Banco",
+            "🔐 Cierre Fiscal",
             "Docs Históricos Finanzas"
         ]
     }

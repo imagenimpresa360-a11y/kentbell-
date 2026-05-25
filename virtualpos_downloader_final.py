@@ -186,7 +186,7 @@ async def find_and_download(page):
                             # ANALIZAR SI ES EMAIL O DESCARGA
                             modal_text = await page.locator('.modal-body, .modal').first.inner_text()
                             if "correo" in modal_text.lower() or "email" in modal_text.lower():
-                                print("        📧 EXPORTACIÓN POR EMAIL DETECTADA.")
+                                print("        [EMAIL] EXPORTACIÓN POR EMAIL DETECTADA.")
                                 await conf_btn.click(force=True)
                                 print("        OK: Confirmación de envío por email completada.")
                                 return "EMAIL_SENT"
@@ -208,6 +208,7 @@ async def find_and_download(page):
                                 # Tal vez era email pero no detectamos el texto
                                 return "CONFIRMED_BUT_NO_DOWNLOAD"
                     except Exception as e:
+                        print(f"        WARN: Fallo al procesar modal con selector {conf_sel}: {e}")
                         continue
 
                 if not confirmed:

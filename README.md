@@ -1,3 +1,3 @@
-# Agente Kent Bell - Central Control System
+# Agente Kent Bell - ERP The Boos Box
 
-Automated reconciliation system for CrossFit Box management.
+**Misión del Sistema:** Ser un ERP Operativo Híper-Especializado basado en Flujo de Caja (Cash-Flow) para la gestión inteligente, analítica y predictiva de centros deportivos (CrossFit), operando de manera complementaria al software contable-tributario externo.

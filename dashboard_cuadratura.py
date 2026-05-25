@@ -148,11 +148,12 @@ def render_cuadratura_dashboard(engine, start_date, end_date, sede_filter):
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ── 3. TABS PRINCIPALES ───────────────────────────────────────────────────
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📋 Comprobantes Registrados",
         "📊 Análisis por Categoría",
         "📅 Cuadratura Mensual",
-        "🔗 Centro de Conciliación"
+        "🔗 Centro de Conciliación",
+        "🔮 Alertas Predictivas"
     ])
 
     # ── TAB 1: COMPROBANTES ───────────────────────────────────────────────────
@@ -362,15 +363,14 @@ def render_cuadratura_dashboard(engine, start_date, end_date, sede_filter):
     # ── TAB 4: MATCHMAKER ──────────────────────────────────────────────────────
     with tab4:
         st.markdown("#### 🔗 MatchMaker: Cruce Manual Banco ↔ Contabilidad")
-        st.caption("Selecciona movimientos del banco y su contraparte en el ledger para cerrar el ciclo.")
+        st.caption("Vincula egresos bancarios con gastos planificados, o categoriza rápidamente movimientos huérfanos.")
 
-        # Egresos huérfanos (no linked al ledger)
         df_huerfanos = df_egresos[df_egresos["ledger_uuid"].isna()].copy() if not df_egresos.empty else pd.DataFrame()
+        
+        col_banco, col_ledger = st.columns([1, 1])
 
-        c_left, c_sep, c_right = st.columns([1, 0.05, 1])
-
-        with c_left:
-            st.markdown("##### 🏦 BANCO (Sin Vincular)")
+        with col_banco:
+            st.markdown("##### 🏦 1. Movimientos Bancarios Huérfanos")
             if not df_huerfanos.empty:
                 banco_sel = st.multiselect(
                     "Selecciona cargo(s) bancario(s):",
@@ -378,59 +378,165 @@ def render_cuadratura_dashboard(engine, start_date, end_date, sede_filter):
                     format_func=lambda x: (
                         f"{df_huerfanos[df_huerfanos['id']==x]['bank_date'].values[0]} | "
                         f"${abs(df_huerfanos[df_huerfanos['id']==x]['amount'].values[0]):,.0f} | "
-                        f"{df_huerfanos[df_huerfanos['id']==x]['description'].values[0][:45]}"
+                        f"{df_huerfanos[df_huerfanos['id']==x]['description'].values[0][:40]}"
                     ),
                     key="mm_banco"
                 )
                 sum_banco = abs(df_huerfanos[df_huerfanos["id"].isin(banco_sel)]["amount"].sum()) if banco_sel else 0
-                st.metric("Total Banco seleccionado", f"${sum_banco:,.0f}")
+                st.metric("Total Seleccionado", f"${sum_banco:,.0f}")
             else:
                 st.success("✅ Sin egresos bancarios huérfanos.")
                 sum_banco = 0
+                banco_sel = []
 
-        with c_right:
-            st.markdown("##### 📒 LEDGER (Pendientes)")
-            if not df_pending.empty:
-                ledger_sel = st.multiselect(
-                    "Selecciona gasto(s) del ledger:",
-                    options=df_pending["uuid"].tolist(),
-                    format_func=lambda x: (
-                        f"{df_pending[df_pending['uuid']==x]['due_date'].values[0]} | "
-                        f"${df_pending[df_pending['uuid']==x]['amount_due'].values[0]:,.0f} | "
-                        f"{df_pending[df_pending['uuid']==x]['description'].values[0][:45]}"
-                    ),
-                    key="mm_ledger"
-                )
-                sum_ledger = df_pending[df_pending["uuid"].isin(ledger_sel)]["amount_due"].sum() if ledger_sel else 0
-                st.metric("Total Ledger seleccionado", f"${sum_ledger:,.0f}")
-            else:
-                st.info("Sin gastos pendientes en el ledger.")
-                sum_ledger = 0
-
-        # Barra de acción
-        st.markdown("---")
-        if sum_banco > 0 and sum_ledger > 0:
-            diff = abs(sum_banco - sum_ledger)
-            tolerance = 500  # CLP
-
-            if diff <= tolerance:
-                st.success(f"✅ CUADRA — Diferencia: ${diff:,.0f} (dentro de tolerancia ${tolerance})")
-                if st.button("🔗 VINCULAR Y CONCILIAR", type="primary", use_container_width=True):
-                    with engine.begin() as conn:
-                        bank_ids_str = ",".join(map(str, banco_sel))
-                        main_date = df_huerfanos[df_huerfanos["id"].isin(banco_sel)]["bank_date"].max()
-                        for l_uuid in ledger_sel:
+        with col_ledger:
+            st.markdown("##### 📒 2. Acción a tomar")
+            
+            if banco_sel:
+                accion_match = st.radio("¿Qué deseas hacer con estos movimientos?", [
+                    "Vincular a Gasto Pendiente (Ya registrado)", 
+                    "Crear Nuevo Gasto (Categorización Rápida)"
+                ])
+                
+                if accion_match == "Vincular a Gasto Pendiente (Ya registrado)":
+                    if not df_pending.empty:
+                        ledger_sel = st.multiselect(
+                            "Selecciona gasto(s) del ledger:",
+                            options=df_pending["uuid"].tolist(),
+                            format_func=lambda x: (
+                                f"{df_pending[df_pending['uuid']==x]['due_date'].values[0]} | "
+                                f"${df_pending[df_pending['uuid']==x]['amount_due'].values[0]:,.0f} | "
+                                f"{df_pending[df_pending['uuid']==x]['description'].values[0][:40]}"
+                            ),
+                            key="mm_ledger"
+                        )
+                        sum_ledger = df_pending[df_pending["uuid"].isin(ledger_sel)]["amount_due"].sum() if ledger_sel else 0
+                        st.metric("Total Ledger", f"${sum_ledger:,.0f}")
+                        
+                        if sum_banco > 0 and sum_ledger > 0:
+                            diff = abs(sum_banco - sum_ledger)
+                            tolerance = 500
+                            if diff <= tolerance:
+                                st.success(f"✅ CUADRA — Diferencia: ${diff:,.0f}")
+                                if st.button("🔗 VINCULAR Y CONCILIAR", type="primary", use_container_width=True):
+                                    with engine.begin() as conn:
+                                        bank_ids_str = ",".join(map(str, banco_sel))
+                                        main_date = df_huerfanos[df_huerfanos["id"].isin(banco_sel)]["bank_date"].max()
+                                        for l_uuid in ledger_sel:
+                                            conn.execute(text("""
+                                                UPDATE expense_ledger
+                                                SET status = 'PAID_VERIFIED', paid_date = :pd, source_bank_id = :bid
+                                                WHERE uuid = :lid
+                                            """), {"pd": main_date, "bid": bank_ids_str, "lid": l_uuid})
+                                    st.success("✅ Conciliación registrada.")
+                                    st.rerun()
+                            else:
+                                st.error(f"❌ NO CUADRA — Diferencia: ${diff:,.0f}")
+                    else:
+                        st.info("No hay gastos pendientes planificados en el Ledger.")
+                        
+                else:
+                    # Crear nuevo gasto
+                    with engine.connect() as conn:
+                        categorias = pd.read_sql("SELECT id, name FROM expense_categories", conn)
+                    
+                    cat_id = st.selectbox("Selecciona Categoría", options=categorias['id'].tolist(), 
+                                          format_func=lambda x: categorias[categorias['id']==x]['name'].values[0])
+                    
+                    # Generar una descripción por defecto basada en el banco
+                    desc_banco = df_huerfanos[df_huerfanos['id']==banco_sel[0]]['description'].values[0] if banco_sel else ""
+                    nueva_desc = st.text_input("Descripción del Gasto", value=f"Pago: {desc_banco}")
+                    sede_asignada = st.selectbox("Sede (Opcional)", ["Campanario", "Marina", "Ambas", "General"])
+                    
+                    if st.button("✨ CREAR Y CONCILIAR AUTOMÁTICAMENTE", type="primary", use_container_width=True):
+                        with engine.begin() as conn:
+                            bank_ids_str = ",".join(map(str, banco_sel))
+                            main_date = df_huerfanos[df_huerfanos["id"].isin(banco_sel)]["bank_date"].max()
                             conn.execute(text("""
-                                UPDATE expense_ledger
-                                SET status = 'PAID_VERIFIED',
-                                    paid_date = :pd,
-                                    source_bank_id = :bid
-                                WHERE uuid = :lid
-                            """), {"pd": main_date, "bid": bank_ids_str, "lid": l_uuid})
-                    st.success("✅ Conciliación registrada.")
-                    st.rerun()
+                                INSERT INTO expense_ledger 
+                                (description, category_id, amount_due, amount_paid, due_date, paid_date, source_bank_id, status, sede)
+                                VALUES (:desc, :cat, :amt, :amt, :dt, :dt, :bid, 'PAID_VERIFIED', :sede)
+                            """), {
+                                "desc": nueva_desc, "cat": cat_id, "amt": sum_banco, 
+                                "dt": main_date, "bid": bank_ids_str, "sede": sede_asignada
+                            })
+                        st.success("✅ Gasto creado y conciliado correctamente.")
+                        st.rerun()
             else:
-                st.error(f"❌ NO CUADRA — Diferencia: ${diff:,.0f}")
-                col_d1, col_d2 = st.columns(2)
-                col_d1.metric("Banco", f"${sum_banco:,.0f}")
-                col_d2.metric("Ledger", f"${sum_ledger:,.0f}", delta=f"-${diff:,.0f}", delta_color="inverse")
+                st.info("Selecciona al menos un movimiento bancario para continuar.")
+
+    # ── TAB 5: ALERTAS PREDICTIVAS ──────────────────────────────────────────────
+    with tab5:
+        st.markdown("#### 🔮 Motor de Alertas Predictivas (AI)")
+        st.caption("Vigilancia inteligente de Flujo de Caja y Control de Costos Fijos.")
+        
+        # Lógica de alertas
+        col_w1, col_w2 = st.columns(2)
+        
+        with col_w1:
+            st.markdown("##### 🚨 Cobertura de Costos por Sede")
+            # Buscar gastos fijos (arriendo, sueldos) vs ingresos mensuales
+            q_alert_income = text("""
+                SELECT 
+                    EXTRACT(MONTH FROM bank_date) as mes,
+                    SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as ingresos,
+                    SUM(CASE WHEN amount < 0 THEN abs(amount) ELSE 0 END) as egresos
+                FROM raw_bank 
+                WHERE bank_date >= date_trunc('month', current_date - interval '1 month')
+                GROUP BY mes ORDER BY mes DESC LIMIT 1
+            """)
+            with engine.connect() as conn:
+                res_alert = conn.execute(q_alert_income).fetchone()
+                if res_alert:
+                    ingresos = res_alert[1] or 0
+                    egresos = res_alert[2] or 0
+                    
+                    if ingresos < egresos:
+                        st.error(f"""
+                        **¡ALERTA CRÍTICA DE LIQUIDEZ!**
+                        Tus egresos operativos ({egresos:,.0f} CLP) están superando tus ingresos bancarios ({ingresos:,.0f} CLP) este mes. 
+                        **Riesgo alto** de no cubrir costos fijos (Arriendos/Sueldos). Se requiere inyección de capital o aumentar esfuerzos de venta.
+                        """)
+                    elif ingresos < (egresos * 1.2):
+                        st.warning(f"""
+                        **ALERTA PREVENTIVA:**
+                        Tus ingresos ({ingresos:,.0f} CLP) apenas cubren tus egresos ({egresos:,.0f} CLP). 
+                        El margen de seguridad es menor al 20%. Precaución con nuevos gastos.
+                        """)
+                    else:
+                        st.success("✅ Los ingresos actuales cubren holgadamente los egresos operativos (Margen saludable).")
+                else:
+                    st.info("No hay datos recientes para evaluar cobertura.")
+
+        with col_w2:
+            st.markdown("##### 📈 Monitoreo de Alzas de Costos Básicos")
+            # Verificar si categoría como Arriendo o Luz subió vs el mes pasado
+            q_costos = text("""
+                WITH monthly_costs AS (
+                    SELECT 
+                        ec.name as categoria,
+                        EXTRACT(MONTH FROM el.paid_date) as mes,
+                        SUM(el.amount_paid) as total
+                    FROM expense_ledger el
+                    JOIN expense_categories ec ON el.category_id = ec.id
+                    WHERE el.status = 'PAID_VERIFIED' AND el.paid_date >= date_trunc('month', current_date - interval '2 month')
+                    GROUP BY ec.name, mes
+                )
+                SELECT 
+                    a.categoria, 
+                    b.total as mes_anterior, 
+                    a.total as mes_actual,
+                    ((a.total - b.total) / b.total) * 100 as variacion
+                FROM monthly_costs a
+                JOIN monthly_costs b ON a.categoria = b.categoria AND a.mes > b.mes
+                WHERE a.total > (b.total * 1.05) -- Solo alertas si sube más de un 5%
+            """)
+            
+            with engine.connect() as conn:
+                alzas = pd.read_sql(q_costos, conn)
+                
+            if not alzas.empty:
+                for _, row in alzas.iterrows():
+                    st.error(f"**ALERTA DE ALZA EN {row['categoria'].upper()}**\n\nEl costo subió un **{row['variacion']:.1f}%** este mes. (Pasó de ${row['mes_anterior']:,.0f} a ${row['mes_actual']:,.0f}). ¡Revisa la facturación!")
+            else:
+                st.success("✅ No se detectan alzas anormales (>5%) en tus costos categorizados vs. el mes anterior.")

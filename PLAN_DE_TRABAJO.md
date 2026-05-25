@@ -25,7 +25,7 @@
 - [x] Desarrollo de script de descarga de reportes
 - [x] Validación de descarga exitosa de CSV
 - [x] **Script final:** `boxmagic_downloader.py` ✅
-    - [ ] Extract Inactive Users Report (Jan-Dec 2025) <!-- id: 16b -->
+    - [x] Extract Inactive Users Report (Jan-Dec 2025) (Extraído por otro agente, pendiente de conectar) <!-- id: 16b -->
 
 ### 4. Conector VirtualPOS
 - [x] Obtención de credenciales
@@ -59,7 +59,7 @@
 - [ ] Revisar y ajustar schema de base de datos (`schema.sql`)
 - [ ] Crear tabla para almacenar datos de BoxMagic
 - [ ] Crear tabla para almacenar datos de VirtualPOS
-- [ ] Desarrollar parser para CSV de BoxMagic
+- [ ] Desarrollar parser para CSV de BoxMagic (e integrar el script de usuarios inactivos resuelto externamente)
 - [ ] Desarrollar parser para CSV/Excel de VirtualPOS
 - [ ] Implementar lógica de inserción de datos
 - [ ] Implementar detección de duplicados
@@ -90,23 +90,20 @@
 
 ### 8. Dashboard de Visualización Financiero Centralizado
 **Prioridad:** ALTA (FOCO ACTUAL)  
-**Estado:** En Progreso
+**Estado:** Completado (Fase 1)
 **Estimación:** 4-6 horas  
-**Dependencias:** Completar limpieza de BD e ingresos históricos disponibles (BoxMagic).
 
 **Tareas:**
-- [ ] Revisar el estado lógico actual (`dashboard.py` / `app.py`).
-- [ ] Diseñar visualización de Flujo de Caja (Ingresos vs Gastos).
-- [ ] Crear consultas SQL para métricas clave:
-  - Ingresos totales por fuente (BoxMagic vs otros)
-  - Gastos por sede y categoría
-  - Tendencia mensual de rentabilidad
-- [ ] Desarrollar interfaz web (Streamlit o similar).
-- [ ] Implementar gráficos interactivos (Plotly/Altair/Streamlit native).
-- [ ] Agregar filtros por fecha/fuente/sede.
-- [ ] Pruebas de usabilidad.
+- [x] Revisar el estado lógico actual (`dashboard.py` / `app.py`).
+- [x] Diseñar visualización de Flujo de Caja (Ingresos vs Gastos).
+- [x] Crear consultas SQL para métricas clave
+- [x] Desarrollar interfaz web (Streamlit o similar).
+- [x] Implementar gráficos interactivos.
+- [x] Agregar filtros por fecha/fuente/sede.
+- [x] **MatchMaker:** Vincular y crear egresos huérfanos con 1 clic.
+- [x] **Alertas Predictivas:** Monitoreo de liquidez y alza de costos.
 
-**Entregable:** Dashboard web financiero completo y actualizado.
+**Entregable:** Dashboard web financiero completado con MatchMaker y Alertas.
 
 ---
 
