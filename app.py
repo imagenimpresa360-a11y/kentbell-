@@ -46,6 +46,22 @@ def show_help(title, message):
     with st.expander(f"❓ Ayuda & Ejemplo: {title}"):
         st.markdown(message)
 
+
+def is_period_closed(db_engine, date_obj):
+    try:
+        from datetime import datetime
+        if isinstance(date_obj, str):
+            p_key = date_obj[:7]
+        else:
+            p_key = date_obj.strftime('%Y-%m')
+        with db_engine.connect() as conn:
+            res = conn.execute(text("SELECT status FROM accounting_periods WHERE period_key = :pk"), {"pk": p_key}).fetchone()
+            if res and res[0] == 'CLOSED':
+                return True
+        return False
+    except:
+        return False
+
 def update_sync_date(key):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
     with engine.begin() as conn:
@@ -735,6 +751,10 @@ elif page == "🏃‍♂️ Gestión de Coaches":
             st.markdown(f"<div style='background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:8px 14px;font-size:1.1rem;font-weight:700;color:#166534;'>💰 Total a registrar: ${total_preview:,.0f}</div>", unsafe_allow_html=True)
 
             if st.form_submit_button("✅ Calcular y Guardar Honorario", use_container_width=True):
+                due_date_str = f"{anio}-{mes:02d}-01"
+                if is_period_closed(engine, due_date_str):
+                    st.error(f"🚫 ERROR DE CIERRE FISCAL: El periodo {due_date_str[:7]} se encuentra CERRADO.")
+                    st.stop()
                 total = horas * tarifa
                 due_date = f"{anio}-{mes:02d}-01"
                 
@@ -869,6 +889,10 @@ elif page == "🏃‍♂️ Gestión de Coaches":
 
                 c_btn1, c_btn2, _ = st.columns([1, 1, 2])
                 if c_btn1.button("💾 Guardar Cambios"):
+                    due_date_str = f"{curr_row['anio']}-{curr_row['mes']:02d}-01"
+                    if is_period_closed(engine, due_date_str):
+                        st.error("🚫 El periodo está cerrado.")
+                        st.stop()
                     new_total = edit_horas * edit_tarifa
                     with engine.begin() as conn:
                         # 1. Actualizar el registro administrativo
@@ -893,6 +917,10 @@ elif page == "🏃‍♂️ Gestión de Coaches":
                     st.rerun()
                 
                 if c_btn2.button("🗑️ Eliminar Registro", type="secondary"):
+                    due_date_str = f"{curr_row['anio']}-{curr_row['mes']:02d}-01"
+                    if is_period_closed(engine, due_date_str):
+                        st.error("🚫 El periodo está cerrado.")
+                        st.stop()
                     with engine.begin() as conn:
                         # PASO 1: Obtener el UUID del expense_ledger ANTES de eliminar
                         result = conn.execute(text("SELECT expense_uuid FROM coach_remunerations WHERE id = :id"), {"id": target_rem})
@@ -1344,7 +1372,9 @@ elif page == "💸 Registrar Egresos":
                             st.warning("Nombre y RUT son obligatorios.")
     
         if st.button("🏁 CONTABILIZAR DOCUMENTO (POST)", type="primary", use_container_width=True):
-            if total_amount <= 0:
+            if is_period_closed(engine, doc_date):
+                st.error(f"🚫 ERROR DE CIERRE FISCAL: El periodo {doc_date.strftime('%Y-%m')} se encuentra CERRADO. No se pueden contabilizar documentos.")
+            elif total_amount <= 0:
                 st.error("El monto debe ser mayor a cero.")
             elif sel_supp == "-- SELECCIONE O CREE NUEVO --":
                 st.warning("Debe seleccionar un proveedor válido.")
