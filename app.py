@@ -1165,7 +1165,8 @@ elif page == "💸 Registrar Egresos":
             df_month = pd.read_sql(query_month, conn, params={"month": mes_sel, "year": anio_sel})
             
         if df_month.empty:
-            st.info(f"ℹ️ No hay egresos contables registrados para {[\"Enero\",\"Febrero\",\"Marzo\",\"Abril\",\"Mayo\",\"Junio\",\"Julio\",\"Agosto\",\"Septiembre\",\"Octubre\",\"Noviembre\",\"Diciembre\"][mes_sel-1]} de {anio_sel}.")
+            months_names = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+            st.info(f"ℹ️ No hay egresos contables registrados para {months_names[mes_sel-1]} de {anio_sel}.")
         else:
             # Calcular KPIs de Cuadratura Operativa
             total_egresos = df_month["Monto"].sum()
