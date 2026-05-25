@@ -180,7 +180,7 @@ st.markdown("""
         color: #1e293b;
     }
     .stApp { 
-        background-color: #2d3748; /* Gris Grafico */
+        background-color: #f1f5f9; 
     }
     
     /* Constrain main content for better readability */
@@ -217,8 +217,11 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
-    /* Input Styling */
+    /* Input Styling - White and Clean */
     .stTextInput>div>div>input, .stNumberInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>div {
+        background-color: white !important;
+        color: #1e293b !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 10px !important;
         transition: all 0.2s;
     }
@@ -227,6 +230,43 @@ st.markdown("""
         box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
     }
     
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: white;
+        border-radius: 8px 8px 0 0;
+        gap: 1px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        border: 1px solid #e2e8f0;
+        border-bottom: none;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #f8fafc;
+        border-top: 3px solid #3b82f6 !important;
+        font-weight: 600;
+    }
+
+    /* Buttons */
+    .stButton>button {
+        background: #2563eb;
+        color: white;
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 0.5rem 1.5rem;
+        border: none;
+        transition: all 0.2s;
+        width: 100%;
+    }
+    .stButton>button:hover {
+        background: #1d4ed8;
+        transform: scale(1.02);
+    }
+
     /* Premium Metric Cards */
     div[data-testid="metric-container"] {
         background-color: #ffffff; 
