@@ -71,6 +71,46 @@ def update_sync_date(key):
             ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
         """), {"k": key, "v": now_str, "l": "Sincronización"})
 
+@st.cache_data(ttl=3600)
+def get_lioren_realtime_data():
+    import requests
+    import os
+    token = os.getenv('LIOREN_API_TOKEN')
+    if not token:
+        return None
+        
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Accept': 'application/json'
+    }
+    
+    result = {
+        "cert_vence": None,
+        "folios_libres": 0
+    }
+    
+    try:
+        # 1. Obtener vencimiento del certificado
+        res_emp = requests.get('https://www.lioren.cl/api/miempresa', headers=headers, timeout=5)
+        if res_emp.status_code == 200:
+            emp_data = res_emp.json()
+            valid_to_str = emp_data.get('validto')
+            if valid_to_str:
+                result["cert_vence"] = valid_to_str.split(' ')[0] # YYYY-MM-DD
+                
+        # 2. Obtener folios libres (Boletas Exentas - 41)
+        res_caf = requests.get('https://www.lioren.cl/api/cafs?tipodoc=41', headers=headers, timeout=5)
+        if res_caf.status_code == 200:
+            cafs = res_caf.json()
+            if cafs:
+                result["folios_libres"] = int(cafs[0].get('libres', 0))
+                
+        return result
+    except Exception as e:
+        print(f"Error fetching Lioren real-time data: {e}")
+        return None
+
+
 # Cargar variables de entorno y construir URL robusta
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -1053,25 +1093,54 @@ elif page == "📉 Alumnos Inactivos":
 # 3. ALERTAS
 elif page == "🚨 Alertas & Control":
     show_help("Centro de Alertas", """
-        Este panel monitorea la salud administrativa de tu box.
-        - **Certificado Digital**: Fecha de vencimiento para facturación SII.
-        - **Folios**: Cantidad de boletas disponibles en Lioren.
+        Este panel monitorea la salud administrativa de tu box en tiempo real.
+        - **Certificado Digital**: Fecha de vencimiento para facturación SII (Sincronizado vía API).
+        - **Folios**: Cantidad de boletas disponibles en Lioren (Boletas Exentas 41).
         - **Cuentas Críticas**: Gastos marcados como prioritarios (Arriendo, Luz) que vencen pronto.
     """)
     st.markdown("<h1>🚨 Centro de Control & Alertas</h1>", unsafe_allow_html=True)
-    df_set = pd.read_sql("SELECT key, value, label FROM system_settings", engine)
+    
+    # Intentar obtener datos reales de Lioren
+    with st.spinner("Conectando con la API de Lioren para actualizar folios y certificado..."):
+        lioren_data = get_lioren_realtime_data()
+    
+    # Cargar valores históricos por si falla la API o no hay internet
+    df_set = pd.read_sql("SELECT key, value FROM system_settings", engine)
     settings = {r['key']: r['value'] for _, r in df_set.iterrows()}
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        vence = datetime.strptime(settings.get('cert_digital_vence', '2026-01-01'), '%Y-%m-%d')
+        if lioren_data and lioren_data["cert_vence"]:
+            vence_str = lioren_data["cert_vence"]
+            # Guardar en caché persistente en DB
+            with engine.begin() as conn:
+                conn.execute(text("INSERT INTO system_settings (key, value, label) VALUES ('cert_digital_vence', :v, 'Certificado Vence') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value"), {"v": vence_str})
+        else:
+            vence_str = settings.get('cert_digital_vence', '2026-01-01')
+            
+        vence = datetime.strptime(vence_str, '%Y-%m-%d')
         days = (vence - datetime.now()).days
-        st.metric("Certificado Digital", vence.strftime('%d/%b'), delta=f"{days} días restantes")
+        
+        # Color dinámico si vence pronto
+        color_flag = "normal" if days > 30 else "inverse"
+        st.metric("Certificado Digital", vence.strftime('%d/%b/%Y'), delta=f"{days} días restantes", delta_color=color_flag)
+        
     with col2:
-        actual = int(settings.get('folios_actuales', 0))
-        st.metric("Folios SII (Disponibles)", actual, delta="-15 esta semana", delta_color="inverse")
+        if lioren_data:
+            actual = lioren_data["folios_libres"]
+            # Guardar en caché persistente en DB
+            with engine.begin() as conn:
+                conn.execute(text("INSERT INTO system_settings (key, value, label) VALUES ('folios_actuales', :v, 'Folios Disponibles') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value"), {"v": str(actual)})
+            api_status = "Sincronizado vía API"
+            api_color = "normal"
+        else:
+            actual = int(settings.get('folios_actuales', 0))
+            api_status = "Usando caché histórica"
+            api_color = "inverse"
+            
+        st.metric("Folios SII (Boletas Exentas)", f"{actual} libres", delta=api_status, delta_color=api_color)
+        
     with col3:
-        # BUG FIXED: Usando uuid en lugar de id
         query_pend = "SELECT uuid FROM expense_ledger WHERE is_critical = TRUE AND status != 'PAID_VERIFIED'"
         pend = len(pd.read_sql(query_pend, engine))
         st.metric("Cuentas Críticas", f"{pend} Facturas", delta="PENDIENTE PAGO", delta_color="inverse")
