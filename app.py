@@ -631,8 +631,8 @@ elif page == "🏃‍♂️ Gestión de Coaches":
         df_c = pd.read_sql("SELECT id, name, base_rate, default_sede FROM coaches WHERE active = TRUE", engine)
 
         # ─────────────────────────────────────────────────────────────
-        # 🟩 PANEL DE CONTROL MENSUAL (rectángulo verde en la foto)
-        # Muestra qué meses del año ya tienen honorarios registrados
+        # 🟩 PANEL DE CONTROL MENSUAL (Filtro Interactivo)
+        # Muestra qué meses del año ya tienen honorarios y filtra la grilla
         # ─────────────────────────────────────────────────────────────
         st.markdown("#### 📅 Control de Sueldos por Mes")
         try:
@@ -642,19 +642,26 @@ elif page == "🏃‍♂️ Gestión de Coaches":
             )
             meses_con_datos = df_meses['month'].tolist()
             nombres_mes = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
-            badges = []
+            
+            mes_map = {"Todos (Año)": None}
+            opciones_meses = ["Todos (Año)"]
+            
             for i, nombre in enumerate(nombres_mes, 1):
                 if i in meses_con_datos:
                     total_m = df_meses[df_meses['month']==i]['total'].values[0]
-                    badges.append(f"<span style='background:#22c55e;color:white;padding:4px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;margin:2px;display:inline-block;' title='${total_m:,.0f}'>✓ {nombre}</span>")
+                    label = f"{nombre} (${total_m/1000:,.0f}k)"
                 else:
-                    mes_actual = datetime.now().month
-                    color = '#f59e0b' if i == mes_actual else '#cbd5e1'
-                    txt_color = 'white' if i == mes_actual else '#64748b'
-                    badges.append(f"<span style='background:{color};color:{txt_color};padding:4px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;margin:2px;display:inline-block;'>{'⚡ ' if i==mes_actual else ''}{nombre}</span>")
-            st.markdown("<div style='background:white;padding:12px 16px;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:16px;'>" + "".join(badges) + "</div>", unsafe_allow_html=True)
+                    label = nombre
+                opciones_meses.append(label)
+                mes_map[label] = i
+                
+            st.caption("Selecciona un mes para auditar la grilla de honorarios:")
+            mes_seleccionado = st.radio("Filtro:", options=opciones_meses, horizontal=True, label_visibility="collapsed")
+            mes_filtro_num = mes_map[mes_seleccionado]
+            
         except Exception as e_mes:
             st.warning(f"No se pudo cargar el control mensual: {e_mes}")
+            mes_filtro_num = None
 
         st.markdown("---")
         st.markdown("### Registrar Horas Mensuales")
@@ -719,6 +726,10 @@ elif page == "🏃‍♂️ Gestión de Coaches":
         st.markdown("---")
         st.markdown("#### 📋 Honorarios Registrados — Vista Rápida")
         try:
+            where_clause = f"r.year = {sel_year}"
+            if mes_filtro_num is not None:
+                where_clause += f" AND r.month = {mes_filtro_num}"
+                
             df_live = pd.read_sql(f"""
                 SELECT 
                     c.name as Coach,
@@ -731,7 +742,7 @@ elif page == "🏃‍♂️ Gestión de Coaches":
                     r.status as Estado
                 FROM coach_remunerations r
                 JOIN coaches c ON r.coach_id = c.id
-                WHERE r.year = {sel_year}
+                WHERE {where_clause}
                 ORDER BY r.month DESC, c.name ASC
             """, engine)
             if df_live.empty:
